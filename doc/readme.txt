@@ -1,0 +1,2 @@
+main可以直接在Linux下运行
+makefile可用于在Linux下编译
