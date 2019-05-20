@@ -13,13 +13,13 @@ namespace OOPD
 		friend class Controller;
 		friend class Operate;
 	private:
-        std::map<std::string, Table*> TableList;
-    public:
-        ~DataBase()
-        {
-            for (auto it = TableList.begin(); it != TableList.end(); ++it)
-                delete it->second;
-        }
+		std::map<std::string, Table*> TableList;
+	public:
+		~DataBase()
+		{
+			for (auto it = TableList.begin(); it != TableList.end(); ++it)
+				delete it->second;
+		}
 	};
 }
 

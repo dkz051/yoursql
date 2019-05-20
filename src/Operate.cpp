@@ -3,19 +3,19 @@
 namespace OOPD
 {
 	//新建一个数据库，传入参数为DataBase容器的引用，以及数据库的名称//返回true表示成功新建，否则表示已有同A
-    bool Operate::DBCreate(std::map<std::string, DataBase*>& target, std::string& DBname)
+	bool Operate::DBCreate(std::map<std::string, DataBase*>& target, std::string& DBname)
 	{
-        auto result = target.insert(std::make_pair(DBname, new DataBase()));
+		auto result = target.insert(std::make_pair(DBname, new DataBase()));
 		return result.second;
 	}
 
 	//删除指定数据库，传入参数同上，若不存在指定数据库则返回false//返回true表示删除成功，否则表示没有此数据库
-    bool Operate::DBDelete(std::map<std::string, DataBase*>& target, std::string& DBname)
+	bool Operate::DBDelete(std::map<std::string, DataBase*>& target, std::string& DBname)
 	{
 		auto it = target.find(DBname);
 		if (it != target.end())
 		{
-            delete it->second;
+			delete it->second;
 			target.erase(it);
 			return true;
 		}
@@ -23,9 +23,9 @@ namespace OOPD
 	}
 
 	//展示全部数据库，传入参数为DataBase容器的引用
-    void Operate::DBShow(std::map<std::string, DataBase*>& target)
+	void Operate::DBShow(std::map<std::string, DataBase*>& target)
 	{
-        std::cout << "Database" << std::endl;
+		std::cout << "Database" << std::endl;
 		auto end = target.end();
 		for (auto it = target.begin(); it != end; ++it)
 		{
@@ -42,16 +42,16 @@ namespace OOPD
 	{
 		//提取参数中的主键信息
 		auto end = attr.end();
-        std::vector<TableCreateAttr> keyInfo;//存储索引列信息（目前仅有主键列为索引列）
-        std::vector<TableCreateAttr> colInfo;//保存所有列信息
+		std::vector<TableCreateAttr> keyInfo;//存储索引列信息（目前仅有主键列为索引列）
+		std::vector<TableCreateAttr> colInfo;//保存所有列信息
 		for (auto it = attr.begin(); it != end; ++it)
 		{
 			if (it->Primary)//如果是主键
-                keyInfo.push_back(*it);
-            colInfo.push_back(std::move(*it));
-        }
-        auto result = target.TableList.insert(std::make_pair(tableName, new Table(keyInfo, colInfo, 4, 3)));//这里的4表示树的阶数，3表示数据类型的数量，可以修改
-        return result.second;
+				keyInfo.push_back(*it);
+			colInfo.push_back(std::move(*it));
+		}
+		auto result = target.TableList.insert(std::make_pair(tableName, new Table(keyInfo, colInfo, 4, 3)));//这里的4表示树的阶数，3表示数据类型的数量，可以修改
+		return result.second;
 	}
 
 	//删除一个数据表，传入参数为当前活动DataBase的引用，以及数据表的名称，若不存在指定数据表则返回false
@@ -59,8 +59,8 @@ namespace OOPD
 	{
 		auto it = target.TableList.find(tableName);
 		if (it != target.TableList.end())
-        {
-            delete  it->second;
+		{
+			delete  it->second;
 			target.TableList.erase(it);
 			return true;
 		}
@@ -68,9 +68,9 @@ namespace OOPD
 	}
 
 	//展示全部数据表，传入参数为当前活动DataBase的引用
-    void Operate::TableShow(DataBase& target, std::string& name)
+	void Operate::TableShow(DataBase& target, std::string& name)
 	{
-        std::cout << "Tables_in_" << name << std::endl;
+		std::cout << "Tables_in_" << name << std::endl;
 		auto end = target.TableList.end();
 		for (auto it = target.TableList.begin(); it != end; ++it)
 			std::cout << it->first << std::endl;
@@ -87,19 +87,19 @@ namespace OOPD
 			//名称
 			std::cout << it->first << '\t';
 			//数据类型
-            switch (it->second.type)
+			switch (it->second.type)
 			{
-                case typeInt: std::cout << "int(11)\t"; break;
+				case typeInt: std::cout << "int(11)\t"; break;
 				case typeDouble: std::cout << "double\t"; break;
-                case typeChar: std::cout << "char(1)\t"; break;
+				case typeChar: std::cout << "char(1)\t"; break;
 			}
 			//NOT NULL - 设定为NOT NULL应输出NO，反之输出YES
 			if (it->second.notNull)
 				std::cout << "NO\t";
 			else
 				std::cout << "YES\t";
-            if (it->first == target.PrimaryCol) std::cout << "PRI\t";
-            else std::cout << "\t";
+			if (it->first == target.PrimaryCol) std::cout << "PRI\t";
+			else std::cout << "\t";
 			std::cout << "NULL\t";
 			std::cout << std::endl;
 		}
@@ -117,21 +117,21 @@ namespace OOPD
 		{
 			switch (AddIt->second.type)
 			{
-                case typeInt: newData->valInt.push_back(0x3f3f3f); break;
-                case typeDouble: newData->valDouble.push_back(0x3f3f3f); break;
-                case typeChar: newData->valString.push_back("NULL"); break;
+				case typeInt: newData->valInt.push_back(0x3f3f3f); break;
+				case typeDouble: newData->valDouble.push_back(0x3f3f3f); break;
+				case typeChar: newData->valString.push_back("NULL"); break;
 			}
 		}
 		//然后初始化值
 		auto end = attr.end();
 		for (auto it = attr.begin(); it != end; ++it)//对于每一列
 		{
-            const DataAddressType& info = target.DataAddress[it->colName];
+			const DataAddressType& info = target.DataAddress[it->colName];
 			switch (info.type)
 			{
-                case typeInt: newData->valInt[info.pos] = SubStringToNum<int>(it->val); break;
-                case typeDouble: newData->valDouble[info.pos] = SubStringToNum<double>(it->val); break;
-                case typeChar: newData->valString[info.pos] = std::move(it->val); break;
+				case typeInt: newData->valInt[info.pos] = SubStringToNum<int>(it->val); break;
+				case typeDouble: newData->valDouble[info.pos] = SubStringToNum<double>(it->val); break;
+				case typeChar: newData->valString[info.pos] = std::move(it->val); break;
 			}
 		}
 		//调用底层接口
@@ -169,7 +169,7 @@ namespace OOPD
 	}
 
 	//修改符合要求的行，传入参数为进行操作的数据表、WHERE子句、需要修改的列、修改后的值
-    bool Operate::DataUpdate(Table& target, WhereAttr& where, std::vector<DataUpdateAttr>& attr)
+	bool Operate::DataUpdate(Table& target, WhereAttr& where, std::vector<DataUpdateAttr>& attr)
 	{
 		auto range = SubWhere(target, where);//range的每一个元素都是一个Data指针
 		auto end = range.end();
@@ -214,15 +214,15 @@ namespace OOPD
 				{
 					switch (info.type)
 					{
-                        case typeInt: (*it)->valInt[info.pos] = SubStringToNum<int>(attrIt->val); break;
-                        case typeDouble: (*it)->valDouble[info.pos] = SubStringToNum<double>(attrIt->val); break;
-                        case typeChar: (*it)->valString[info.pos] = attrIt->val; break;
+						case typeInt: (*it)->valInt[info.pos] = SubStringToNum<int>(attrIt->val); break;
+						case typeDouble: (*it)->valDouble[info.pos] = SubStringToNum<double>(attrIt->val); break;
+						case typeChar: (*it)->valString[info.pos] = attrIt->val; break;
 					}
 				}
 				if (result == false)
 					return false;
 			}
-			
+
 		}
 		return true;
 	}
@@ -233,9 +233,9 @@ namespace OOPD
 		std::vector<Data*> range = SubWhere(target, where);
 		if (range.size() == 0)//如果没有元素，即没有符合要求的行
 			return;//则不输出任何信息
-        for (auto it = colName.begin(); it != colName.end(); ++it) //输出列名
-            std::cout << *it << "\t";
-        std::cout << std::endl;
+		for (auto it = colName.begin(); it != colName.end(); ++it) //输出列名
+			std::cout << *it << "\t";
+		std::cout << std::endl;
 		auto end = range.end();
 		const DataAddressType& info = target.DataAddress[target.PrimaryCol];//对此数组进行排序，依据主键的大小
 		switch (info.type)
@@ -252,16 +252,16 @@ namespace OOPD
 				const DataAddressType& info = target.DataAddress[*colIt];
 				switch (info.type)
 				{
-                    case typeInt:
-                        if ((*it)->valInt[info.pos] == 0x3f3f3f) {std::cout << "NULL" << '\t'; break;}
-                        else {std::cout << (*it)->valInt[info.pos] << '\t'; break;}
-                    case typeDouble:
-                        if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {std::cout << "NULL" << '\t'; break;}
-                        else {std::cout << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos] << '\t'; break;}
-					case typeChar: std::cout << (*it)->valString[info.pos] << '\t'; break; 
+					case typeInt:
+						if ((*it)->valInt[info.pos] == 0x3f3f3f) {std::cout << "NULL" << '\t'; break;}
+						else {std::cout << (*it)->valInt[info.pos] << '\t'; break;}
+					case typeDouble:
+						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {std::cout << "NULL" << '\t'; break;}
+						else {std::cout << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos] << '\t'; break;}
+					case typeChar: std::cout << (*it)->valString[info.pos] << '\t'; break;
 				}
 			}
-            std::cout << std::endl;
+			std::cout << std::endl;
 		}
 		return;
 	}
@@ -354,7 +354,7 @@ namespace OOPD
 								if (leftIt->type == valConst)
 									leftVal = &(leftIt->valOrName);
 								else
-                                    leftVal = &((*it)->valString[target.DataAddress[leftIt->valOrName].pos]);
+									leftVal = &((*it)->valString[target.DataAddress[leftIt->valOrName].pos]);
 								if (rightIt->type == valConst)
 									rightVal = &(rightIt->valOrName);
 								else
@@ -381,8 +381,8 @@ namespace OOPD
 							if (flag || attrIt->logicType > cursor->logicType)//如果当前光标仍为空或者此运算符优先级更高
 							{
 								cursor = attrIt;//使cursor指向优先级更高的逻辑运算符
-                                flag = false;//表示cursor被设置过了
-                                rightVal = comIt;//根据两个数组同时遍历的逻辑，此时comIt必然指向逻辑运算符右侧的比较运算的结果
+								flag = false;//表示cursor被设置过了
+								rightVal = comIt;//根据两个数组同时遍历的逻辑，此时comIt必然指向逻辑运算符右侧的比较运算的结果
 							}
 						if (attrIt->type == compare)//同时也在遍历之前的comResult数组，每当遇到比较运算符结点，就向后移动一位
 							++comIt;
