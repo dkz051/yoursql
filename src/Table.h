@@ -14,23 +14,23 @@ namespace OOPD
 {
 	class Table
 	{
-        friend class Operate;
-        friend class Controller;
+		friend class Operate;
+		friend class Controller;
 	private:
-        int TreeRank; //索引树的阶数
-        int TypeNum; //数据类型数量
-        std::string PrimaryCol; //主索引的列名
-        std::map<std::string, DataAddressType> DataAddress;//通过列名查找此列数据的数据类型以及在Data对象中的存储位置，pair中的DataType告知应去哪个数组中查找，int则是其在该数组中的下标
-        std::map<std::string, BPTree<int>*> IntTreeList; //通过列名管理多个索引树
-        std::map<std::string, BPTree<double>*> DoubleTreeList;
-        std::map<std::string, BPTree<std::string>*> CharTreeList;
+		int TreeRank; //索引树的阶数
+		int TypeNum; //数据类型数量
+		std::string PrimaryCol; //主索引的列名
+		std::map<std::string, DataAddressType> DataAddress;//通过列名查找此列数据的数据类型以及在Data对象中的存储位置，pair中的DataType告知应去哪个数组中查找，int则是其在该数组中的下标
+		std::map<std::string, BPTree<int>*> IntTreeList; //通过列名管理多个索引树
+		std::map<std::string, BPTree<double>*> DoubleTreeList;
+		std::map<std::string, BPTree<std::string>*> CharTreeList;
 	public:
-        Table(std::vector<TableCreateAttr> & KeyInfo, std::vector<TableCreateAttr> & ColInfo, const int tree_rank, const int type_num);
+		Table(std::vector<TableCreateAttr> & KeyInfo, std::vector<TableCreateAttr> & ColInfo, const int tree_rank, const int type_num);
 		~Table();//需要把所有树释放
-        BPTree<int>* GetTreeInt(const TableCreateAttr & KeyInfo);
-        BPTree<double>* GetTreeDouble(const TableCreateAttr & KeyInfo);
-        BPTree<std::string>* GetTreeChar(const TableCreateAttr & KeyInfo);
-        //一些底层控制接口
+		BPTree<int>* GetTreeInt(const TableCreateAttr & KeyInfo);
+		BPTree<double>* GetTreeDouble(const TableCreateAttr & KeyInfo);
+		BPTree<std::string>* GetTreeChar(const TableCreateAttr & KeyInfo);
+		//一些底层控制接口
 	};
 }
 

@@ -15,17 +15,17 @@ namespace OOPD
 	{
 	private:
 		Operate operate;
-        std::map<std::string, DataBase*> DBList;
-        Controller controller;
+		std::map<std::string, DataBase*> DBList;
+		Controller controller;
 	public:
-        OOPDB() : controller(DBList, operate) {}
-        ~OOPDB()
-        {
-            for (auto it = DBList.begin(); it != DBList.end(); ++it)
-                delete it->second;
-        }
-        //Controller类中应该用引用接收这两个参数
-        void Start() {controller.start();}
+		OOPDB() : controller(DBList, operate) {}
+		~OOPDB()
+		{
+			for (auto it = DBList.begin(); it != DBList.end(); ++it)
+				delete it->second;
+		}
+		//Controller类中应该用引用接收这两个参数
+		void Start() {controller.start();}
 	};
 }
 
