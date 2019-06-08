@@ -1,13 +1,13 @@
 Case #1: Accepted
 Case #2: Accepted
 Case #3: Accepted
-Case #4: Wrong Answer
+Case #4: Accepted
 Case #5: Accepted
 Case #6: Accepted
 Case #7: Accepted
 Case #8: Accepted
-Case #9: Wrong Answer
-Case #10: Wrong Answer
+Case #9: Accepted
+Case #10: Accepted
 Case #11: Accepted
 Case #12: Wrong Answer
 Case #13: Runtime Error

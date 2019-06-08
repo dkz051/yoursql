@@ -295,8 +295,11 @@ namespace OOPD
 			if (it - saver.begin() == pos) break;
 			if (*it == "*")
 			{
-				for (auto iter = targetTable.DataAddress.begin(); iter != targetTable.DataAddress.end(); ++iter)
-					colname.push_back(iter->first);
+				//for (auto iter = targetTable.DataAddress.begin(); iter != targetTable.DataAddress.end(); ++iter)
+				for (auto iter = targetTable.columnNames.begin(); iter != targetTable.columnNames.end(); ++iter) {
+					auto it = targetTable.DataAddress.find(*iter);
+					colname.push_back(it->first);
+				}
 				break;
 			}
 			colname.push_back(*it);
