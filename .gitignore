@@ -1,7 +1,10 @@
 main
 .vscode/*
 *.o
-src/.*o
+src/*.o
+src/*.sql
+src/*.out
+src/*.ans
 *.ans
-test/.*o
+test/*.o
 report.txt
