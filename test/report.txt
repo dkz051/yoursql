@@ -1,0 +1,20 @@
+Case #1: Accepted
+Case #2: Accepted
+Case #3: Accepted
+Case #4: Wrong Answer
+Case #5: Accepted
+Case #6: Accepted
+Case #7: Accepted
+Case #8: Accepted
+Case #9: Wrong Answer
+Case #10: Wrong Answer
+Case #11: Accepted
+Case #12: Wrong Answer
+Case #13: Runtime Error
+Case #14: Time Limit Exceeded
+Case #15: Runtime Error
+Case #16: Wrong Answer
+Case #17: Wrong Answer
+Case #18: Wrong Answer
+Case #19: Wrong Answer
+Case #20: Wrong Answer

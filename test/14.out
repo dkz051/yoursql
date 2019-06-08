@@ -1,0 +1,16 @@
+Database
+aCs
+eDc
+iJn
+qAz
+ert
+-2013
+-1592
+-1421
+154
+1583
+Field	Type	Null	Key	Default	Extra
+wer	int(11)	YES		NULL	
+ert	int(11)	YES		NULL	
+rty	int(11)	YES		NULL	
+tyu	int(11)	NO	PRI	NULL	

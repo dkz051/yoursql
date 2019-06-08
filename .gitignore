@@ -1,2 +1,7 @@
 main
 .vscode/*
+*.o
+src/.*o
+*.ans
+test/.*o
+report.txt

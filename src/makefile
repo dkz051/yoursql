@@ -1,2 +1,24 @@
-main: main.cpp Operate.cpp Controller.cpp Table.cpp BPTree.h BPTreeNode.h Controller.h DataBase.h OOPDB.h Operate.h SubClass.h Table.h
-	g++ -o main main.cpp Controller.cpp Operate.cpp Table.cpp -std=c++14 -O2
+CC = g++
+CPPFLAGS = -std=c++14 -g
+
+.PHONY: all
+all: main
+
+main: main.o Controller.o Operate.o Table.o
+	$(CC) $^ -o $@
+
+Controller.o: Controller.cpp Controller.h Operate.h DataBase.h Table.h BPTree.h BPTreeNode.h SubClass.h
+	$(CC) $(CPPFLAGS) $< -o $@ -c
+
+Operate.o: Operate.cpp Operate.h DataBase.h Table.h BPTree.h BPTreeNode.h SubClass.h
+	$(CC) $(CPPFLAGS) $< -o $@ -c
+
+Table.o: Table.cpp Table.h BPTree.h BPTreeNode.h SubClass.h
+	$(CC) $(CPPFLAGS) $< -o $@ -c
+
+main.o: main.cpp OOPDB.h Controller.h Operate.h DataBase.h Table.h BPTree.h BPTreeNode.h SubClass.h
+	$(CC) $(CPPFLAGS) $< -o $@ -c
+
+.PHONY: clean
+clean:
+	rm main *.o -f
