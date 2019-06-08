@@ -11,6 +11,7 @@ namespace OOPD
 		{
 			DataAddress.insert(std::pair<std::string, DataAddressType>(it->colName, {it->type, pos[it->type]++, it->NotNull}));
 			if (it->Primary) PrimaryCol = it->colName;
+			columnNames.push_back(it->colName);
 		}
 		for (auto it = KeyInfo.begin(); it != KeyInfo.end(); ++it)
 		{

@@ -21,6 +21,9 @@ namespace OOPD
 		int TypeNum; //数据类型数量
 		std::string PrimaryCol; //主索引的列名
 		std::map<std::string, DataAddressType> DataAddress;//通过列名查找此列数据的数据类型以及在Data对象中的存储位置，pair中的DataType告知应去哪个数组中查找，int则是其在该数组中的下标
+
+		std::vector<std::string> columnNames; // 存储列名称的 vector
+
 		std::map<std::string, BPTree<int>*> IntTreeList; //通过列名管理多个索引树
 		std::map<std::string, BPTree<double>*> DoubleTreeList;
 		std::map<std::string, BPTree<std::string>*> CharTreeList;

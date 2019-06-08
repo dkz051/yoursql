@@ -81,9 +81,11 @@ namespace OOPD
 	void Operate::TableShowInfo(Table& target)
 	{
 		std::cout << "Field	Type	Null	Key	Default	Extra\n";
-		auto end = target.DataAddress.end();
-		for (auto it = target.DataAddress.begin(); it != end; ++it)
+		//auto end = target.DataAddress.end();
+		//for (auto it = target.DataAddress.begin(); it != end; ++it)
+		for (auto iter = target.columnNames.begin(); iter != target.columnNames.end(); ++iter)
 		{
+			auto it = target.DataAddress.find(*iter);
 			//名称
 			std::cout << it->first << '\t';
 			//数据类型
