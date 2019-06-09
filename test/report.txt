@@ -2,7 +2,7 @@ Case #1: Accepted
 Case #2: Accepted
 Case #3: Accepted
 Case #4: Accepted
-Case #5: Runtime Error
+Case #5: Accepted
 Case #6: Accepted
 Case #7: Accepted
 Case #8: Accepted
@@ -12,3 +12,9 @@ Case #11: Accepted
 Case #12: Accepted
 Case #13: Accepted
 Case #14: Accepted
+Case #15: Accepted
+Case #16: Accepted
+Case #17: Wrong Answer
+Case #18: Wrong Answer
+Case #19: Wrong Answer
+Case #20: Wrong Answer

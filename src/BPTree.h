@@ -188,7 +188,8 @@ namespace OOPD
 			else if (right_target != nullptr) NowNode = NowNode->Merge(right_target, LEFT);
 		}
 		NowNode = RootPointer;
-		if (NowNode->KeyValue.empty())
+		if (NowNode->KeyValue.empty()
+			&& NowNode->GetType() != OOPD::LEAF) // 万一删光了？
 		{
 			NowNode->ChildPointer[0]->ParentPointer = nullptr;
 			RootPointer = NowNode->ChildPointer[0];

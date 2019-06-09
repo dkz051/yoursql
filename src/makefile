@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -std=c++14 -O2 -DDEBUG
+CPPFLAGS = -std=c++14 -O2
 
 .PHONY: all
 all: main
