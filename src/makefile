@@ -4,8 +4,11 @@ CPPFLAGS = -std=c++14 -g
 .PHONY: all
 all: main
 
-main: main.o Controller.o Operate.o Table.o
+main: main.o tools.o Controller.o Operate.o Table.o
 	$(CC) $^ -o $@
+
+tools.o: tools.cpp tools.h
+	$(CC) $(CPPFLAGS) $< -o $@ -c
 
 Controller.o: Controller.cpp Controller.h Operate.h DataBase.h Table.h BPTree.h BPTreeNode.h SubClass.h
 	$(CC) $(CPPFLAGS) $< -o $@ -c

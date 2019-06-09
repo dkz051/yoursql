@@ -17,6 +17,7 @@ namespace OOPD
 		friend class Operate;
 		friend class Controller;
 	private:
+		int rowID; //行ID，每插入一行+1
 		int TreeRank; //索引树的阶数
 		int TypeNum; //数据类型数量
 		std::string PrimaryCol; //主索引的列名

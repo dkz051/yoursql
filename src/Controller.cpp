@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include "tools.h"
 
 namespace OOPD
 {
@@ -106,10 +107,16 @@ namespace OOPD
 			std::string name(str5.begin(), str5.begin() + CutString(str5));
 			std::string term(str5.begin() + CutString(str5) + 1, str5.end() - 1); //过滤右括号
 			std::vector<TableCreateAttr> attr;
-			int pos = 0;
+
+			if (term.find("PRIMARY KEY") == std::string::npos)
+			{
+				term = hiddenPrimaryKey + " INT, " + term + ", PRIMARY KEY (" + hiddenPrimaryKey + ")";
+			}
+
 			char CutSignal = ',';
 			term += CutSignal;
-			pos =  term.find(CutSignal);
+
+			int pos = term.find(CutSignal);
 			while (pos != std::string::npos)//以逗号为间隔提取每一个参数组
 			{
 				std::string temp = term.substr(0,pos), testofkey;
@@ -168,6 +175,14 @@ namespace OOPD
 		char CutSignal=',';
 		colname += CutSignal;
 		val_string += CutSignal;
+
+		Table *table = activeDB->TableList.find(tablename)->second;
+		if (table->PrimaryCol == hiddenPrimaryKey)
+		{
+			colname += hiddenPrimaryKey + CutSignal;
+			val_string += std::to_string(table->rowID) + CutSignal;
+		}
+
 		int pos1 = colname.find(CutSignal);
 		int pos2 = val_string.find(CutSignal);
 		while (pos1!= std::string::npos && pos2!=std::string::npos)//以逗号为间隔提取每一个参数组
@@ -186,7 +201,8 @@ namespace OOPD
 			pos2 = val_string.find(CutSignal);
 			attr.push_back(DataUpdateAttr(temp1, temp2));
 		}
-		return opt.DataInsert(*activeDB->TableList.find(tablename)->second, attr);
+		++table->rowID;
+		return opt.DataInsert(*table, attr);
 	}
 
 	bool Controller::SHOW(std::string& temp)
@@ -298,7 +314,7 @@ namespace OOPD
 				//for (auto iter = targetTable.DataAddress.begin(); iter != targetTable.DataAddress.end(); ++iter)
 				for (auto iter = targetTable.columnNames.begin(); iter != targetTable.columnNames.end(); ++iter) {
 					auto it = targetTable.DataAddress.find(*iter);
-					colname.push_back(it->first);
+					if (it->first != hiddenPrimaryKey) colname.push_back(it->first);
 				}
 				break;
 			}

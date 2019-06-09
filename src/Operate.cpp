@@ -1,4 +1,5 @@
 #include "Operate.h"
+#include "tools.h"
 
 namespace OOPD
 {
@@ -86,6 +87,7 @@ namespace OOPD
 		for (auto iter = target.columnNames.begin(); iter != target.columnNames.end(); ++iter)
 		{
 			auto it = target.DataAddress.find(*iter);
+			if (it->first == hiddenPrimaryKey) continue;
 			//名称
 			std::cout << it->first << '\t';
 			//数据类型
