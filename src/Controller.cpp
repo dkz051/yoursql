@@ -501,6 +501,7 @@ namespace OOPD
 			traversalWhere.traversalAttr.push_back(WhereAttrSub2(valCol, oprOr, greater, colType, thisNode));
 			pos += strLen;
 			it += (strLen - 1);
+			if (strLen == -1) break; //漏写一句话，浪费一下午
 		}
 		//traversalWhere的创建已经完成，下面需要判定是否符合使用search模式的条件，即全部列名只涉及到主键且比较运算只涉及列与常量的比较
 		//遍历traversalWhere中的traversalAttr数组以进行判定

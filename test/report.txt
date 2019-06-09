@@ -11,7 +11,7 @@ Case #10: Accepted
 Case #11: Accepted
 Case #12: Accepted
 Case #13: Accepted
-Case #14: Time Limit Exceeded
+Case #14: Accepted
 Case #15: Runtime Error
 Case #16: Accepted
 Case #17: Wrong Answer
