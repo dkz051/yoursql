@@ -13,7 +13,7 @@ do
 		echo "Case #$i: Runtime Error" >>report.txt
 	else
 		echo "Case #$i Comparing..."
-		diff $i.ans $i.out -bB >/dev/null
+		./diff $i.ans $i.out -bB >/dev/null
 		if [ $? -ne 0 ] ; then
 			echo "Case #$i: Wrong Answer" >>report.txt
 		else

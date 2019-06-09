@@ -9,11 +9,11 @@ Case #8: Accepted
 Case #9: Accepted
 Case #10: Accepted
 Case #11: Accepted
-Case #12: Wrong Answer
+Case #12: Accepted
 Case #13: Runtime Error
 Case #14: Time Limit Exceeded
 Case #15: Runtime Error
-Case #16: Wrong Answer
+Case #16: Accepted
 Case #17: Wrong Answer
 Case #18: Wrong Answer
 Case #19: Wrong Answer

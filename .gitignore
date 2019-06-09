@@ -5,6 +5,8 @@ src/*.o
 src/*.sql
 src/*.out
 src/*.ans
+src/diff
+src/main
 *.ans
 test/*.o
 report.txt
