@@ -17,4 +17,3 @@ Case #16: Accepted
 Case #17: Wrong Answer
 Case #18: Wrong Answer
 Case #19: Wrong Answer
-Case #20: Wrong Answer

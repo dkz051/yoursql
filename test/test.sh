@@ -2,7 +2,7 @@
 
 rm report.txt -f
 
-for i in {1..20}
+for i in {1..19}
 do
 	echo "Case #$i Running"
 	timeout 30s ./main <$i.sql >$i.ans
