@@ -146,7 +146,8 @@ namespace OOPD
 				   NowNode->ParentPointer->KeyValue[it - NowNode->ParentPointer->ChildPointer.begin() - 1] = (*(it + 1))->KeyValue[0];
 				break;
 			}
-		while (NowNode->KeyValue.size() < Rank / 2) //进行结点的旋转、合并（如果有需要），并更新根指针
+		while (NowNode->GetType() != OOPD::LEAF && // WQNMLGB
+			NowNode->KeyValue.size() < Rank / 2) //进行结点的旋转、合并（如果有需要），并更新根指针
 		{
 			if (NowNode == RootPointer)
 			{
@@ -183,7 +184,8 @@ namespace OOPD
 				break;
 			}
 			if (left_target != nullptr) NowNode = NowNode->Merge(left_target, RIGHT);
-			else NowNode = NowNode->Merge(right_target, LEFT);
+		//	else NowNode = NowNode->Merge(right_target, LEFT);
+			else if (right_target != nullptr) NowNode = NowNode->Merge(right_target, LEFT);
 		}
 		NowNode = RootPointer;
 		if (NowNode->KeyValue.empty())

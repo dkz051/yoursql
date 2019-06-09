@@ -63,6 +63,10 @@ namespace OOPD
 
 	bool Controller::Readin()
 	{
+#ifdef DEBUG
+		static int kase = 0;
+		std::cerr << "Executing SQL statement #" << ++kase << ".\n";
+#endif
 		std::string str1, str2, str3;
 		if (!getline(std::cin,str1,';')) return false;
 		TrimString(str1); //过滤换行符

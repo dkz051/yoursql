@@ -156,8 +156,14 @@ namespace OOPD
 		auto range = SubWhere(target, where);
 		const DataAddressType& info = target.DataAddress[target.PrimaryCol];//获得key值的信息
 		auto end = range.end();
+#ifdef DEBUG
+		int recordID = 0;
+#endif
 		for (auto it = range.begin(); it != end; ++it)//对于每一行Data
 		{
+#ifdef DEBUG
+			std::cerr << "Deleting record #" << ++recordID << "/" << range.size() << '\n';
+#endif
 			bool result;
 			switch (info.type)//调用主键树的删除接口，传入本行Data的主键值
 			{
