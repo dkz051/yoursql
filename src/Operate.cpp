@@ -24,13 +24,13 @@ namespace OOPD
 	}
 
 	//展示全部数据库，传入参数为DataBase容器的引用
-	void Operate::DBShow(std::map<std::string, DataBase*>& target)
+	void Operate::DBShow(std::map<std::string, DataBase*>& target, std::ostream& o)
 	{
-		std::cout << "Database" << std::endl;
+		o << "Database" << std::endl;
 		auto end = target.end();
 		for (auto it = target.begin(); it != end; ++it)
 		{
-			std::cout << it->first << std::endl;
+			o << it->first << std::endl;
 		}
 		return;
 	}
@@ -69,19 +69,19 @@ namespace OOPD
 	}
 
 	//展示全部数据表，传入参数为当前活动DataBase的引用
-	void Operate::TableShow(DataBase& target, std::string& name)
+	void Operate::TableShow(DataBase& target, std::string& name, std::ostream& o)
 	{
-		std::cout << "Tables_in_" << name << std::endl;
+		o << "Tables_in_" << name << std::endl;
 		auto end = target.TableList.end();
 		for (auto it = target.TableList.begin(); it != end; ++it)
-			std::cout << it->first << std::endl;
+			o << it->first << std::endl;
 		return;
 	}
 
 	//展示指定数据表的基本属性，传入参数为该数据表的引用
-	void Operate::TableShowInfo(Table& target)
+	void Operate::TableShowInfo(Table& target, std::ostream& o)
 	{
-		std::cout << "Field	Type	Null	Key	Default	Extra\n";
+		o << "Field	Type	Null	Key	Default	Extra\n";
 		//auto end = target.DataAddress.end();
 		//for (auto it = target.DataAddress.begin(); it != end; ++it)
 		for (auto iter = target.columnNames.begin(); iter != target.columnNames.end(); ++iter)
@@ -89,23 +89,23 @@ namespace OOPD
 			auto it = target.DataAddress.find(*iter);
 			if (it->first == hiddenPrimaryKey) continue;
 			//名称
-			std::cout << it->first << '\t';
+			o << it->first << '\t';
 			//数据类型
 			switch (it->second.type)
 			{
-				case typeInt: std::cout << "int(11)\t"; break;
-				case typeDouble: std::cout << "double\t"; break;
-				case typeChar: std::cout << "char(1)\t"; break;
+				case typeInt: o << "int(11)\t"; break;
+				case typeDouble: o << "double\t"; break;
+				case typeChar: o << "char(1)\t"; break;
 			}
 			//NOT NULL - 设定为NOT NULL应输出NO，反之输出YES
 			if (it->second.notNull)
-				std::cout << "NO\t";
+				o << "NO\t";
 			else
-				std::cout << "YES\t";
-			if (it->first == target.PrimaryCol) std::cout << "PRI\t";
-			else std::cout << "\t";
-			std::cout << "NULL\t";
-			std::cout << std::endl;
+				o << "YES\t";
+			if (it->first == target.PrimaryCol) o << "PRI\t";
+			else o << "\t";
+			o << "NULL\t";
+			o << std::endl;
 		}
 		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//根据样例略微调整
 	}
@@ -238,14 +238,14 @@ namespace OOPD
 	}
 
 	//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
-	void Operate::DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where)
+	void Operate::DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, std::ostream& o)
 	{
 		std::vector<Data*> range = SubWhere(target, where);
 		if (range.size() == 0)//如果没有元素，即没有符合要求的行
 			return;//则不输出任何信息
 		for (auto it = colName.begin(); it != colName.end(); ++it) //输出列名
-			std::cout << *it << "\t";
-		std::cout << std::endl;
+			o << *it << "\t";
+		o << std::endl;
 		auto end = range.end();
 		const DataAddressType& info = target.DataAddress[target.PrimaryCol];//对此数组进行排序，依据主键的大小
 		switch (info.type)
@@ -263,15 +263,15 @@ namespace OOPD
 				switch (info.type)
 				{
 					case typeInt:
-						if ((*it)->valInt[info.pos] == 0x3f3f3f) {std::cout << "NULL" << '\t'; break;}
-						else {std::cout << (*it)->valInt[info.pos] << '\t'; break;}
+						if ((*it)->valInt[info.pos] == 0x3f3f3f) {o << "NULL" << '\t'; break;}
+						else {o << (*it)->valInt[info.pos] << '\t'; break;}
 					case typeDouble:
-						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {std::cout << "NULL" << '\t'; break;}
-						else {std::cout << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos] << '\t'; break;}
-					case typeChar: std::cout << (*it)->valString[info.pos] << '\t'; break;
+						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL" << '\t'; break;}
+						else {o << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos] << '\t'; break;}
+					case typeChar: o << (*it)->valString[info.pos] << '\t'; break;
 				}
 			}
-			std::cout << std::endl;
+			o << std::endl;
 		}
 		return;
 	}

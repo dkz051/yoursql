@@ -17,7 +17,7 @@ namespace OOPD
 		~BPTree();
 		int GetRank() {return Rank;} // 获得B+树的阶数
 		Node<T>* GetRoot() {return RootPointer;} // 获得B+树的根指针
-		void Print(Node<T>* pos, int depth); //打印整个B+树
+		void Print(Node<T>* pos, int depth, std::ostream& o = std::cout); //打印整个B+树
 		bool Insert(T & key, Data* data); //添加索引为key的数据，若索引已经存在则返回false
 		bool Delete(T & key); //删除索引为key的数据，若索引不存在则返回false
 		bool Update(T & key, T & new_key); //以new_key更新索引为key的数据，若失败则返回false
@@ -44,24 +44,24 @@ namespace OOPD
 	}
 
 	template<typename T>
-	void BPTree<T>::Print(Node<T>* pos, int depth)
+	void BPTree<T>::Print(Node<T>* pos, int depth, std::ostream& o)
 	{
 		if (RootPointer == nullptr)
 		{
-			std::cout << "The Tree Is Empty !" << std::endl;
+			o << "The Tree Is Empty !" << std::endl;
 			return;
 		}
 		if (pos->GetType() != LEAF)
 			for (auto it = pos->ChildPointer.begin(); it != pos->ChildPointer.end(); ++it)
 				Print(*it, depth + 1);
-		std::cout << "Depth  " << depth;
-		if (pos->ParentPointer != nullptr) std::cout << "   Parent  " << pos->ParentPointer->KeyValue[0] << std::endl;
-		else std::cout << "  NULL" << std::endl;
+		o << "Depth  " << depth;
+		if (pos->ParentPointer != nullptr) o << "   Parent  " << pos->ParentPointer->KeyValue[0] << std::endl;
+		else o << "  NULL" << std::endl;
 		for (auto it = pos->KeyValue.begin(); it != pos->KeyValue.end(); ++it)
 		{
-			std::cout << "    KeyNum   " << it - pos->KeyValue.begin() << "   Key   " << *it;
-			if (!pos->DataPointer.empty()) std::cout << "   Data   " << pos->DataPointer[it - pos->KeyValue.begin()]->VAL << std::endl;
-			else std::cout << std::endl;
+			o << "    KeyNum   " << it - pos->KeyValue.begin() << "   Key   " << *it;
+			if (!pos->DataPointer.empty()) o << "   Data   " << pos->DataPointer[it - pos->KeyValue.begin()]->VAL << std::endl;
+			else o << std::endl;
 		}
 		return;
 	}

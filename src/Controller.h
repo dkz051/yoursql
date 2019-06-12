@@ -21,7 +21,8 @@ namespace OOPD
 		~Controller() {}
 		//调用此方法开始循环读取用户输入，直到遇到EOF
 		void start();
-		bool Readin();
+		bool Readin(std::ostream& o = std::cout);
+		bool execute(std::string str1, std::ostream& o = std::cout); //执行单条命令
 		int CutString(std::string& str);
 		std::string& AdjustString(std::string& str);
 		std::string& TrimString(std::string& str);
@@ -32,11 +33,11 @@ namespace OOPD
 		bool DROP(std::string& str3);
 		//当用户输入的第一段字符为USE时调用此方法，修改activeDB指针
 		bool USE(std::string& str3);
-		bool SHOW(std::string& str3);
+		bool SHOW(std::string& str3, std::ostream& o = std::cout);
 		bool INSERT(std::string& str3);
 		bool DELETE(std::string& str3);
 		bool UPDATE(std::string& str3);
-		bool SELECT(std::string& str3);
+		bool SELECT(std::string& str3, std::ostream& o = std::cout);
 		//子方法，用于构造Operate::TableCreate方法的参数结构
 		TableCreateAttr TableOp(std::string& temp);
 		//子方法，用于构造Where子句的参数结构

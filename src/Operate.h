@@ -25,7 +25,7 @@ namespace OOPD
 		//DBSelect，即更改当前选中数据库的功能，由Controller类自行实现
 		//void DBSelect();
 		//展示全部数据库，传入参数为DataBase容器的引用
-		void DBShow(std::map<std::string, DataBase*>& target);
+		void DBShow(std::map<std::string, DataBase*>& target, std::ostream& o = std::cout);
 
 		//-----数据表层面的操作，名称以Table开头-----//
 		//新建一个数据表，传入参数为当前活动DataBase的引用，数据表的名称、(各列的名称及数据类型、是否设置为NOT NULL、是否设置为主键)在一个结构体中
@@ -34,9 +34,9 @@ namespace OOPD
 		//删除一个数据表，传入参数为当前活动DataBase的引用，以及数据表的名称，若不存在指定数据表则返回false
 		bool TableDelete(DataBase& target, std::string& tableName);
 		//展示全部数据表，传入参数为当前活动DataBase的引用
-		void TableShow(DataBase& target, std::string& name);
+		void TableShow(DataBase& target, std::string& name, std::ostream& o = std::cout);
 		//展示指定数据表的基本属性，传入参数为该数据表的引用
-		void TableShowInfo(Table& target);
+		void TableShowInfo(Table& target, std::ostream& o = std::cout);
 
 		//-----数据表中数据的操作，名称以Data开头-----//
 		//加入一行数据，传入参数为进行操作的数据表、一行中各列的值（按照固定的顺序排列）
@@ -46,7 +46,7 @@ namespace OOPD
 		//修改符合要求的行，传入参数为进行操作的数据表、WHERE子句、需要修改的列、修改后的值
 		bool DataUpdate(Table& target, WhereAttr& where, std::vector<DataUpdateAttr>& attr);
 		//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
-		void DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where);//如果是select *就直接将Table的colName传进来
+		void DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, std::ostream& o = std::cout);//如果是select *就直接将Table的colName传进来
 
 	private:
 		//-----次级操作，作为通用的代码被上述方法调用，名称以Sub开头-----//

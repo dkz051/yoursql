@@ -57,18 +57,27 @@ namespace OOPD
 
 	void Controller::start()
 	{
-		while(Readin());
+		std::string command;
+		while (getline(std::cin, command, ';'))
+			execute(command, std::cout);
 		return;
 	}
 
-	bool Controller::Readin()
+	bool Controller::Readin(std::ostream& o)
+	{
+		std::string str1, str2, str3;
+		if (!getline(std::cin,str1,';')) return false;
+		execute(str1, o);
+		return true;
+	}
+
+	bool Controller::execute(std::string str1, std::ostream& o)
 	{
 #ifdef DEBUG
 		static int kase = 0;
 		std::cerr << "Executing SQL statement #" << ++kase << ".\n";
 #endif
-		std::string str1, str2, str3;
-		if (!getline(std::cin,str1,';')) return false;
+		std::string str2, str3;
 		TrimString(str1); //过滤换行符
 		if (!(str1[0] >= 'A' && str1[0] <= 'Z' || str1[0] >= 'a' && str1[0] <= 'z')) return true;
 		if (CutString(str1) != std::string::npos)
@@ -81,11 +90,11 @@ namespace OOPD
 		if (str2 == "CREATE") CREATE(str3);
 		else if (str2 == "DROP") DROP(str3);
 		else if (str2 == "USE") USE(str3);
-		else if(str2 == "SHOW") SHOW(str3);
+		else if (str2 == "SHOW") SHOW(str3, o);
 		else if (str2 == "INSERT") INSERT(str3);
 		else if (str2 == "UPDATE") UPDATE(str3);
 		else if (str2 == "DELETE") DELETE(str3);
-		else if (str2 == "SELECT") SELECT(str3);
+		else if (str2 == "SELECT") SELECT(str3, o);
 		return true;
 	}
 
@@ -209,7 +218,7 @@ namespace OOPD
 		return opt.DataInsert(*table, attr);
 	}
 
-	bool Controller::SHOW(std::string& temp)
+	bool Controller::SHOW(std::string& temp, std::ostream& o)
 	{
 		std::vector<std::string>saver; //储存分离的字符串便于分析
 		char CutSignal=' ';
@@ -222,7 +231,7 @@ namespace OOPD
 		}
 		saver.push_back(temp);
 		AdjustString(saver[0]);
-		if(saver[0] =="DATABASES") opt.DBShow(target);
+		if(saver[0] =="DATABASES") opt.DBShow(target, o);
 		else if(saver[0] =="TABLES")
 		{
 			std::string name;
@@ -232,10 +241,10 @@ namespace OOPD
 					name = it->first;
 					break;
 				}
-			opt.TableShow(*activeDB, name);
+			opt.TableShow(*activeDB, name, o);
 		}
 		else if(saver[0] =="COLUMNS")
-			opt.TableShowInfo(*activeDB->TableList.find(saver.back())->second);
+			opt.TableShowInfo(*activeDB->TableList.find(saver.back())->second, o);
 		return true;
 	}
 
@@ -278,7 +287,7 @@ namespace OOPD
 		return opt.DataDelete(targetTable, temp);//调用SubWhere获得Where参数，并调用DataDelete方法
 	}
 
-	bool Controller::SELECT(std::string& str3)
+	bool Controller::SELECT(std::string& str3, std::ostream& o)
 	{
 		bool judge = false; //判断是否有WhereClause
 		TrimString(str3); //去除空格
@@ -327,7 +336,7 @@ namespace OOPD
 		//调用方法
 		if (!judge) str3 = "";
 		auto temp = SubWhere(targetTable, str3);
-		opt.DataShow(targetTable, colname, temp);
+		opt.DataShow(targetTable, colname, temp, o);
 	}
 
 	bool Controller::UPDATE(std::string& str3)
