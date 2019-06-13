@@ -27,6 +27,27 @@
 #include "OOPDB.h"
 #include "tools.h"
 
+namespace
+{
+
+const char RESET[] = "\033[0m";
+const char BLACK[] = "\033[30m"; /* Black */
+const char RED[] = "\033[31m"; /* Red */
+const char GREEN[] = "\033[32m"; /* Green */
+const char YELLOW[] = "\033[33m"; /* Yellow */
+const char BLUE[] = "\033[34m"; /* Blue */
+const char MAGENTA[] = "\033[35m"; /* Magenta */
+const char CYAN[] = "\033[36m"; /* Cyan */
+const char WHITE[] = "\033[37m"; /* White */
+const char BOLDBLACK[] = "\033[1m\033[30m"; /* Bold Black */
+const char BOLDRED[] = "\033[1m\033[31m"; /* Bold Red */
+const char BOLDGREEN[] = "\033[1m\033[32m"; /* Bold Green */
+const char BOLDYELLOW[] = "\033[1m\033[33m"; /* Bold Yellow */
+const char BOLDBLUE[] = "\033[1m\033[34m"; /* Bold Blue */
+const char BOLDMAGENTA[] = "\033[1m\033[35m"; /* Bold Magenta */
+const char BOLDCYAN[] = "\033[1m\033[36m"; /* Bold Cyan */
+const char BOLDWHITE[] = "\033[1m\033[37m"; /* Bold White */
+
 class commandBuffer
 {
 private:
@@ -89,6 +110,18 @@ void sqlAbort(int signo)
 	bExit = true;
 }
 
+std::string getTime(const char* format = "[%s] ")
+{
+	time_t rawtime;
+	tm* timeinfo;
+	char buf[64], fmt[64];
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	sprintf(fmt, "%04d/%2d/%2d %2d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+	sprintf(buf, format, fmt);
+	return buf;
+}
+
 // ==================== ^ Common ^ ==================== //
 // ==================== v Server v ==================== //
 
@@ -122,7 +155,7 @@ void getConnection()
 	{
 		int conn = accept(s, (sockaddr*)(&servaddr), &len);
 		conns.push_back(conn);
-		std::cout << "New connection: " << conn << std::endl;
+		std::clog << getTime() << CYAN << "New connection: " << GREEN << conn << RESET << std::endl;
 	}
 }
 
@@ -143,7 +176,7 @@ void getData()
 			maxfd = std::max(maxfd, it->conn);
 			retval = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 			if (retval == -1)
-				std::cerr << "Error occurred in select().\n";
+				std::cerr << getTime() << RED << "Error occurred in select().\n" << RESET;
 			else if (retval == 0)
 				/* std::clog << "No message received. Waiting...\n" */;
 			else
@@ -158,7 +191,7 @@ void getData()
 
 					for (std::string sql = it->buffer.sql(false); sql != ""; sql = it->buffer.sql(false))
 					{
-						std::cout << "Received [connection " << std::setw(2) << it->conn << "]: " << sql << std::endl;
+						std::clog << getTime() << GREEN << "Received" << YELLOW << std::setw(4) << it->conn << RESET << ' ' << sql << std::endl;
 						queriesMutex.lock();
 						queries.push(yoursqlQuery(it->conn, sql));
 						queriesMutex.unlock();
@@ -184,7 +217,7 @@ void execute()
 			yourDatabase->execute(query.sql, os);
 			std::string output = os.str() + endChar;
 
-			std::cout << "Executed [connection " << std::setw(2) << query.conn << "]: " << query.sql << std::endl;
+			std::clog << getTime() << GREEN << "Executed" << YELLOW << std::setw(4) << query.conn << ' ' << RESET << query.sql << std::endl;
 
 			send(query.conn, output.c_str(), output.length(), 0);
 		}
@@ -194,9 +227,11 @@ void execute()
 	}
 }
 
+}
+
 int startServer(OOPD::OOPDB& database, std::string serverIp, uint16_t port)
 {
-	std::cout << "Initializing..." << std::endl;
+	std::clog << getTime() << GREEN << "Initializing..." << RESET << std::endl;
 
 	yourDatabase = &database;
 
@@ -222,14 +257,17 @@ int startServer(OOPD::OOPDB& database, std::string serverIp, uint16_t port)
 	std::thread t2(getData);
 	t2.detach();
 
-	std::cout << "Server running on " + serverIp + ":" + std::to_string(port) + ". Press Ctrl+C to stop." << std::endl;
+	std::clog << getTime() << "Server running at " << YELLOW << serverIp << RESET << ":" << GREEN << std::to_string(port) << RESET << ". Press " << RED << "Ctrl+C" << RESET << " to stop." << std::endl;
 
 	signal(SIGINT, sqlAbort);
 	while (!bExit) cpuBreak();
 
-	std::cout << "Bye" << std::endl;
+	std::clog << getTime() << MAGENTA << "Bye" << RESET << std::endl;
 	return 0;
 }
+
+namespace
+{
 
 // ==================== ^ Server ^ ==================== //
 // ==================== v Client v ==================== //
@@ -261,7 +299,7 @@ void fetchData()
 		retval = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 		if (retval == -1)
 		{
-			std::cerr << "Error occurred in select(). Exiting...\n";
+			std::cerr << getTime() << RED << "Error occurred in select(). Exiting...\n" << RESET;
 			break;
 		}
 		else if (retval == 0)
@@ -282,7 +320,7 @@ void fetchData()
 				for (int i = 0; i < len; ++i)
 				{
 					if (recvbuf[i] == '\x1B')
-						std::cout << "Connection timed out (" << connectionTimeout << " second(s)). Closed." << std::endl;
+						std::clog << getTime() << RED << "Connection timed out (" << connectionTimeout << " second(s)). Closed." << RESET << std::endl;
 					else std::cout << recvbuf[i];
 				}
 				if (flag) break;
@@ -296,9 +334,11 @@ void fetchInput()
 {
 	for (bool flag = false; !std::cin.eof() && !clientBuffer.hasSql() && !bExit; flag = true)
 	{
-		std::cout << (flag ? "       > " : "yoursql> ") << std::flush;
+		std::cout << BLUE << (flag ? "       > " : "yoursql> ") << RESET << std::flush;
 		std::string rawTemp;
 		getline(std::cin, rawTemp);
+		if (!isatty(fileno(stdin)))
+			std::cout << rawTemp << std::endl;
 		clientBuffer.append(rawTemp + ' ');
 	}
 	if (std::cin.eof()) bExit = true;
@@ -311,13 +351,15 @@ void clientRoutine()
 	{
 		fetchInput();
 		if (bExit) break;
-		while ((sql = clientBuffer.sql(true)) != "")
+		while ((sql = trimString(clientBuffer.sql(true))) != "")
 		{
 			for (unsigned i = 0; i < sql.length(); i += bufferSize)
 				send(sock_cli, sql.c_str() + i, std::min((unsigned long)bufferSize, sql.length() - i), 0);
 			fetchData();
 		}
 	}
+}
+
 }
 
 int startClient(std::string serverIp, uint16_t port)
@@ -335,11 +377,11 @@ int startClient(std::string serverIp, uint16_t port)
 	if (connect(sock_cli, (sockaddr*)(&servaddr), sizeof(servaddr)) < 0)
 		throw "Cannot connect server at " + serverIp + ':' + std::to_string(port);
 
-	std::cout << "Connected to server at " << serverIp << ':' << port << ". Press Ctrl+D (i.e. EOF) to exit." << std::endl;
+	std::clog << getTime() << "Connected to server at " << YELLOW << serverIp << RESET << ':' << GREEN << port << RESET << ". Press " << RED << "Ctrl+D" << RESET << " (i.e. EOF) to exit." << std::endl;
 
 	signal(SIGINT, sqlAbort);
 	clientRoutine();
 	close(sock_cli);
-	std::cout << "Bye" << std::endl;
+	std::cout << MAGENTA << "Bye" << RESET << std::endl;
 	return 0;
 }

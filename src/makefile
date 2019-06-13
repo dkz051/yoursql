@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -std=c++14 -g -Wall
+CPPFLAGS = -std=c++14 -O2
 LINKFLAGS = -lpthread
 
 .PHONY: all
