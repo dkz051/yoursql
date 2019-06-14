@@ -215,8 +215,20 @@ void execute()
 			queriesMutex.unlock();
 
 			std::stringstream os("");
-			query.conn.session.execute(query.sql, os);
-			std::string output = os.str() + endChar;
+			std::string output("");
+			try
+			{
+				query.conn.session.execute(query.sql, os);
+				output = os.str() + endChar;
+			}
+			catch (const char e[])
+			{
+				output = RED + std::string(e) + '\n' + RESET + endChar;
+			}
+			catch (std::string e)
+			{
+				output = RED + e + '\n' + RESET + endChar;
+			}
 
 			std::clog << getTime() << GREEN << "Executed" << YELLOW << std::setw(4) << query.conn.conn << ' ' << RESET << query.sql << std::endl;
 
@@ -256,7 +268,7 @@ int startServer(dbSet& databases, std::string serverIp, uint16_t port)
 	std::thread t2(getData);
 	t2.detach();
 
-	std::clog << getTime() << "Server running at " << YELLOW << serverIp << RESET << ":" << GREEN << std::to_string(port) << RESET << ". Press " << RED << "Ctrl+C" << RESET << " to stop." << std::endl;
+	std::clog << getTime() << "Server is running at " << YELLOW << serverIp << RESET << ":" << GREEN << std::to_string(port) << RESET << ". Press " << RED << "Ctrl+C" << RESET << " to stop." << std::endl;
 
 	signal(SIGINT, sqlAbort);
 	while (!bExit) cpuBreak();
@@ -313,12 +325,7 @@ void fetchData()
 				int len = recv(sock_cli, recvbuf, bufferSize, 0);
 				bool flag;
 				if (len > 0 && recvbuf[len - 1] == endChar) recvbuf[--len] = '\0', flag = true;
-				for (int i = 0; i < len; ++i)
-				{
-					if (recvbuf[i] == '\x1B')
-						std::clog << getTime() << RED << "Connection timed out (" << connectionTimeout << " second(s)). Closed." << RESET << std::endl;
-					else std::cout << recvbuf[i];
-				}
+				std::cout << recvbuf;
 				if (flag) break;
 			}
 		}
@@ -330,7 +337,7 @@ void fetchInput()
 {
 	for (bool flag = false; !std::cin.eof() && !clientBuffer.hasSql() && !bExit; flag = true)
 	{
-		std::cout << BLUE << (flag ? "       > " : "yoursql> ") << RESET << std::flush;
+		std::cout << (flag ? "      -> " : "yoursql> ") << std::flush;
 		std::string rawTemp;
 		getline(std::cin, rawTemp);
 		if (!isatty(fileno(stdin)))
@@ -347,8 +354,14 @@ void clientRoutine()
 	{
 		fetchInput();
 		if (bExit) break;
-		while ((sql = trimString(clientBuffer.sql(true))) != "")
+		while ((sql = trimString(clientBuffer.sql(false))) != "")
 		{
+			if (stringToLower(sql) == "exit")
+			{
+				bExit = true;
+				return;
+			}
+			sql.push_back(';');
 			for (unsigned i = 0; i < sql.length(); i += bufferSize)
 				send(sock_cli, sql.c_str() + i, std::min((unsigned long)bufferSize, sql.length() - i), 0);
 			fetchData();
@@ -371,7 +384,7 @@ int startClient(std::string serverIp, uint16_t port)
 	if (connect(sock_cli, (sockaddr*)(&servaddr), sizeof(servaddr)) < 0)
 		throw "Cannot connect server at " + serverIp + ':' + std::to_string(port);
 
-	std::clog << getTime() << "Connected to server at " << YELLOW << serverIp << RESET << ':' << GREEN << port << RESET << ". Press " << RED << "Ctrl+D" << RESET << " (i.e. EOF) to exit." << std::endl;
+	std::clog << getTime() << "Connected to server at " << YELLOW << serverIp << RESET << ':' << GREEN << port << RESET << ". Press " << RED << "Ctrl+D" << RESET << " (i.e. EOF) or enter '" << RED << "exit;" << RESET << "' to exit." << std::endl;
 
 	signal(SIGINT, sqlAbort);
 	clientRoutine();

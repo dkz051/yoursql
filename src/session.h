@@ -25,10 +25,10 @@ namespace OOPD
 		DataBase* getDatabase(const std::string& dbName = "");
 		Table* getTable(const std::string& tableName, const std::string& dbName = "");
 
-		bool createDatabase(std::string dbName);
-		bool createTable(std::string tableName, const tokens& traits);
-		bool dropDatabase(std::string dbName);
-		bool dropTable(std::string tableName);
+		void createDatabase(std::string dbName);
+		void createTable(std::string tableName, const tokens& traits);
+		void dropDatabase(std::string dbName);
+		void dropTable(std::string tableName);
 		bool use(std::string dbName);
 		int insert(std::string tableName, const attrs& fields, const tokens& values);
 		int insertRaw(std::string tableName, const attrs& fields, tokens values);
@@ -42,7 +42,7 @@ namespace OOPD
 		Session(dbSet& dbList): selected(""), db(dbList) {}
 		~Session() {}
 		void start();
-		std::string execute(std::string sql, std::ostream& o = std::cout);
+		void execute(std::string sql, std::ostream& o = std::cout);
 	};
 }
 //-----------------------------------------//

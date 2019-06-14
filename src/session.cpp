@@ -30,14 +30,13 @@ namespace OOPD
 		return;
 	}
 
-	std::string Session::execute(std::string sql, std::ostream& o)
+	void Session::execute(std::string sql, std::ostream& o)
 	{
 		auto str = tokenize(sql), strLower = str; // 调用 tokenize 函数分词
 		std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::stringToLower); // 全部小写
 
-		if (str.size() < 1) return "Not a statement"; // 不是完整语句
-
-		if (strLower[0] == "create")
+		if (str.size() < 2) throw "Not a complete statement"; // 不是完整语句
+		else if (strLower[0] == "create")
 		{
 			if (strLower[1] == "database")
 				createDatabase(str[2]);
@@ -48,25 +47,19 @@ namespace OOPD
 				createTable(str[2], traits);
 			}
 		}
-		if (strLower[0] == "drop")
-		{
-			if (strLower[1] == "database")
-				dropDatabase(str[2]);
-			else if (strLower[1] == "table")
-				dropTable(str[2]);
-		}
-		if (strLower[0] == "use" && strLower[1] != "tables")
+		else if (strLower[0] == "drop" && strLower[1] == "database")
+			dropDatabase(str[2]);
+		else if (strLower[0] == "drop" && strLower[1] == "table")
+			dropTable(str[2]);
+		else if (strLower[0] == "use" && strLower[1] != "tables")
 			use(str[1]);
-		if (strLower[0] == "show")
-		{
-			if (strLower[1] == "databases")
-				opt.DBShow(db, o);
-			else if (strLower[1] == "tables")
-				opt.TableShow(*getDatabase(), selected, o);
-			else if (strLower[1] == "columns")
-				opt.TableShowInfo(*getDatabase()->TableList[str[3]], o);
-		}
-		if (strLower[0] == "insert" && strLower[1] == "into")
+		else if (strLower[0] == "show" && strLower[1] == "databases")
+			opt.DBShow(db, o);
+		else if (strLower[0] == "show" && strLower[1] == "tables")
+			opt.TableShow(*getDatabase(), selected, o);
+		else if (strLower[0] == "show" && strLower[1] == "columns")
+			opt.TableShowInfo(*getDatabase()->TableList[str[3]], o);
+		else if (strLower[0] == "insert" && strLower[1] == "into")
 		{
 			auto t = std::find(strLower.begin(), strLower.end(), "values") - strLower.begin();
 			insert(
@@ -75,16 +68,18 @@ namespace OOPD
 				tokens(str.begin() + t + 2, str.end() - 1)
 			);
 		}
-		if (strLower[0] == "load")
+		else if (strLower[0] == "load")
 		{
 			auto p = std::find(strLower.begin(), strLower.end(), "infile") - strLower.begin();
+			if (p == strLower.size()) throw "Input file not specified";
+
 			std::string inputFileName = parseStringLiteral(str[p + 1]);
 			auto t = std::find(strLower.begin(), strLower.end(), ")") - strLower.begin();
 			auto& tableName = str[p + 4];
 			auto attrName = tokens(str.begin() + p + 6, str.begin() + t);
 			std::ifstream i(inputFileName);
 			if (!i.is_open())
-				throw "Cannot open input file.";
+				throw "Cannot open input file";
 			std::string line;
 			while (getline(i, line))
 			{
@@ -98,7 +93,7 @@ namespace OOPD
 				insertRaw(tableName, attrName, attrValue);
 			}
 		}
-		if (strLower[0] == "delete" && strLower[1] == "from")
+		else if (strLower[0] == "delete" && strLower[1] == "from")
 		{
 			auto t = find(strLower.begin(), strLower.end(), "where") - strLower.begin();
 			if (t == (int)strLower.size())
@@ -106,7 +101,7 @@ namespace OOPD
 			else
 				remove(str[2], tokens(str.begin() + t + 1, str.end()));
 		}
-		if (strLower[0] == "update")
+		else if (strLower[0] == "update")
 		{
 			auto t = std::find(strLower.begin(), strLower.end(), "where") - strLower.begin();
 			auto setClause = tokens(str.begin() + 3, str.begin() + t);
@@ -115,7 +110,7 @@ namespace OOPD
 			else
 				update(str[1], setClause, tokens(str.begin() + t + 1, str.end()));
 		}
-		if (strLower[0] == "select")
+		else if (strLower[0] == "select")
 		{
 			auto f = std::find(strLower.begin(), strLower.end(), "into") - strLower.begin();
 
@@ -163,15 +158,16 @@ namespace OOPD
 			}
 			if (os != &o) delete os;
 		}
-		return "Temporarily nothing returned";
+		else throw "Unknown SQL command";
 	}
 
-	bool Session::createDatabase(std::string dbName)
+	void Session::createDatabase(std::string dbName)
 	{
-		return opt.DBCreate(db, dbName);
+		if (!opt.DBCreate(db, dbName))
+			throw "Database '" + dbName + "' already exists";
 	}
 
-	bool Session::createTable(std::string tableName, const tokens& traits)
+	void Session::createTable(std::string tableName, const tokens& traits)
 	{
 		std::vector<TableCreateAttr> fields;
 		std::string primaryKey;
@@ -213,18 +209,21 @@ namespace OOPD
 			field.type = typeInt;
 			fields.push_back(field);
 		}
-		return opt.TableCreate(*getDatabase(), tableName, fields);
+		if (!opt.TableCreate(*getDatabase(), tableName, fields))
+			throw "Table '" + tableName + "' already exists";
 	}
 
-	bool Session::dropDatabase(std::string dbName)
+	void Session::dropDatabase(std::string dbName)
 	{
 		if (dbName == selected) selected = "";
-		return opt.DBDelete(db, dbName);
+		if (!opt.DBDelete(db, dbName))
+			throw "Database '" + dbName + "' does not exist";
 	}
 
-	bool Session::dropTable(std::string tableName)
+	void Session::dropTable(std::string tableName)
 	{
-		return opt.TableDelete(*getDatabase(), tableName);
+		if (!opt.TableDelete(*getDatabase(), tableName))
+			throw "Table '" + tableName + "' does not exist";
 	}
 
 	bool Session::use(std::string dbName)

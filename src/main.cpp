@@ -81,6 +81,10 @@ int main(int argc, char *argv[])
 		else if (mode == role_t::server) // Run local server
 			startServer(yourDatabase, serverIp, port);
 	}
+	catch (const char e[])
+	{
+		std::cerr << e << std::endl;
+	}
 	catch (std::string e)
 	{
 		std::cerr << e << std::endl;

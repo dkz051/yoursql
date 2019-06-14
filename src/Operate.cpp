@@ -26,6 +26,7 @@ namespace OOPD
 	//展示全部数据库，传入参数为DataBase容器的引用
 	void Operate::DBShow(std::map<std::string, DataBase*>& target, std::ostream& o)
 	{
+		if (target.empty()) return;
 		o << "Database" << std::endl;
 		auto end = target.end();
 		for (auto it = target.begin(); it != end; ++it)
@@ -71,6 +72,7 @@ namespace OOPD
 	//展示全部数据表，传入参数为当前活动DataBase的引用
 	void Operate::TableShow(DataBase& target, std::string& name, std::ostream& o)
 	{
+		if (target.TableList.empty()) return;
 		o << "Tables_in_" << name << std::endl;
 		auto end = target.TableList.end();
 		for (auto it = target.TableList.begin(); it != end; ++it)
