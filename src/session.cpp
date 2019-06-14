@@ -118,11 +118,15 @@ namespace OOPD
 		if (strLower[0] == "select")
 		{
 			auto f = std::find(strLower.begin(), strLower.end(), "into") - strLower.begin();
+
+			bool import = false;
+
 			std::ostream* os = nullptr;
 			if (f == (int)strLower.size())
 				os = &o;
 			else
 			{
+				import = true;
 				std::string outputFileName = parseStringLiteral(str[f + 2]);
 				std::ofstream* of = new std::ofstream(outputFileName, std::ios::out);
 				if (!of->is_open())
@@ -149,13 +153,13 @@ namespace OOPD
 			if (t == (int)strLower.size())
 			{
 				auto where = SubWhere(table, whereStr);
-				opt.DataShow(table, attrName, where, *os);
+				opt.DataShow(table, attrName, where, !import, *os);
 			}
 			else
 			{
 				whereStr = concatenate(tokens(str.begin() + t + 1, str.end()));
 				auto where = SubWhere(table, whereStr);
-				opt.DataShow(table, attrName, where, *os);
+				opt.DataShow(table, attrName, where, !import, *os);
 			}
 			if (os != &o) delete os;
 		}

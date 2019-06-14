@@ -332,7 +332,7 @@ namespace OOPD
 		//调用方法
 		if (!judge) str3 = "";
 		auto temp = SubWhere(targetTable, str3);
-		opt.DataShow(targetTable, colname, temp, o);
+		opt.DataShow(targetTable, colname, temp, true, o);
 	}
 
 	bool Controller::UPDATE(std::string& str3)

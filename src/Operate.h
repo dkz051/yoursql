@@ -46,7 +46,7 @@ namespace OOPD
 		//修改符合要求的行，传入参数为进行操作的数据表、WHERE子句、需要修改的列、修改后的值
 		bool DataUpdate(Table& target, WhereAttr& where, std::vector<DataUpdateAttr>& attr);
 		//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
-		void DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, std::ostream& o = std::cout);//如果是select *就直接将Table的colName传进来
+		void DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, bool withTitle = true, std::ostream& o = std::cout);//如果是select *就直接将Table的colName传进来
 
 	private:
 		//-----次级操作，作为通用的代码被上述方法调用，名称以Sub开头-----//

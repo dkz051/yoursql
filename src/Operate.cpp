@@ -238,14 +238,17 @@ namespace OOPD
 	}
 
 	//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
-	void Operate::DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, std::ostream& o)
+	void Operate::DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, bool withTitle, std::ostream& o)
 	{
 		std::vector<Data*> range = SubWhere(target, where);
 		if (range.size() == 0)//如果没有元素，即没有符合要求的行
 			return;//则不输出任何信息
-		for (auto it = colName.begin(); it != colName.end(); ++it) //输出列名
-			o << *it << "\t";
-		o << std::endl;
+		if (withTitle)
+		{
+			for (auto it = colName.begin(); it != colName.end(); ++it) //输出列名
+				o << *it << "\t";
+			o << std::endl;
+		}
 		auto end = range.end();
 		const DataAddressType& info = target.DataAddress[target.PrimaryCol];//对此数组进行排序，依据主键的大小
 		switch (info.type)
@@ -260,15 +263,18 @@ namespace OOPD
 			for (auto colIt = colName.begin(); colIt != colEnd; ++colIt)//对于该行的每一列
 			{
 				const DataAddressType& info = target.DataAddress[*colIt];
+
+				if (colIt != colName.begin()) o << '\t';
+
 				switch (info.type)
 				{
 					case typeInt:
-						if ((*it)->valInt[info.pos] == 0x3f3f3f) {o << "NULL" << '\t'; break;}
-						else {o << (*it)->valInt[info.pos] << '\t'; break;}
+						if ((*it)->valInt[info.pos] == 0x3f3f3f) {o << "NULL"; break;}
+						else {o << (*it)->valInt[info.pos]; break;}
 					case typeDouble:
-						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL" << '\t'; break;}
-						else {o << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos] << '\t'; break;}
-					case typeChar: o << (*it)->valString[info.pos] << '\t'; break;
+						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL"; break;}
+						else {o << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos]; break;}
+					case typeChar: o << (*it)->valString[info.pos]; break;
 				}
 			}
 			o << std::endl;
