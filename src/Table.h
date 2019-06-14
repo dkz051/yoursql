@@ -16,6 +16,7 @@ namespace OOPD
 	{
 		friend class Operate;
 		friend class Controller;
+		friend class Session;
 	private:
 		int rowID; //行ID，每插入一行+1
 		int TreeRank; //索引树的阶数

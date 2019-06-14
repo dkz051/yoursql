@@ -73,10 +73,6 @@ namespace OOPD
 
 	bool Controller::execute(std::string str1, std::ostream& o)
 	{
-#ifdef DEBUG
-		static int kase = 0;
-		std::cerr << "Executing SQL statement #" << ++kase << ".\n";
-#endif
 		std::string str2, str3;
 		TrimString(str1); //过滤换行符
 		if (!(str1[0] >= 'A' && str1[0] <= 'Z' || str1[0] >= 'a' && str1[0] <= 'z')) return true;

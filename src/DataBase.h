@@ -11,6 +11,7 @@ namespace OOPD
 	class DataBase
 	{
 		friend class Controller;
+		friend class Session;
 		friend class Operate;
 	private:
 		std::map<std::string, Table*> TableList;

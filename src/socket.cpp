@@ -24,29 +24,26 @@
 #include <sys/wait.h>
 #include <sys/shm.h>
 
-#include "OOPDB.h"
 #include "tools.h"
+#include "session.h"
 
-namespace
-{
-
-const char RESET[] = "\033[0m";
-const char BLACK[] = "\033[30m"; /* Black */
-const char RED[] = "\033[31m"; /* Red */
-const char GREEN[] = "\033[32m"; /* Green */
-const char YELLOW[] = "\033[33m"; /* Yellow */
-const char BLUE[] = "\033[34m"; /* Blue */
-const char MAGENTA[] = "\033[35m"; /* Magenta */
-const char CYAN[] = "\033[36m"; /* Cyan */
-const char WHITE[] = "\033[37m"; /* White */
-const char BOLDBLACK[] = "\033[1m\033[30m"; /* Bold Black */
-const char BOLDRED[] = "\033[1m\033[31m"; /* Bold Red */
-const char BOLDGREEN[] = "\033[1m\033[32m"; /* Bold Green */
-const char BOLDYELLOW[] = "\033[1m\033[33m"; /* Bold Yellow */
-const char BOLDBLUE[] = "\033[1m\033[34m"; /* Bold Blue */
-const char BOLDMAGENTA[] = "\033[1m\033[35m"; /* Bold Magenta */
-const char BOLDCYAN[] = "\033[1m\033[36m"; /* Bold Cyan */
-const char BOLDWHITE[] = "\033[1m\033[37m"; /* Bold White */
+const char RESET[]       = "\033[0m"        ;
+const char BLACK[]       =        "\033[30m";
+const char RED[]         =        "\033[31m";
+const char GREEN[]       =        "\033[32m";
+const char YELLOW[]      =        "\033[33m";
+const char BLUE[]        =        "\033[34m";
+const char MAGENTA[]     =        "\033[35m";
+const char CYAN[]        =        "\033[36m";
+const char WHITE[]       =        "\033[37m";
+const char BOLDBLACK[]   = "\033[1m\033[30m";
+const char BOLDRED[]     = "\033[1m\033[31m";
+const char BOLDGREEN[]   = "\033[1m\033[32m";
+const char BOLDYELLOW[]  = "\033[1m\033[33m";
+const char BOLDBLUE[]    = "\033[1m\033[34m";
+const char BOLDMAGENTA[] = "\033[1m\033[35m";
+const char BOLDCYAN[]    = "\033[1m\033[36m";
+const char BOLDWHITE[]   = "\033[1m\033[37m";
 
 class commandBuffer
 {
@@ -125,18 +122,21 @@ std::string getTime(const char* format = "[%s] ")
 // ==================== ^ Common ^ ==================== //
 // ==================== v Server v ==================== //
 
-struct yoursqlQuery
-{
-	int conn;
-	std::string sql;
-	yoursqlQuery(int conn, std::string sql): conn(conn), sql(sql) {}
-};
+dbSet *yourDatabase = nullptr;
 
 struct conn_t
 {
 	int conn;
 	commandBuffer buffer;
-	conn_t(int conn): conn(conn) {}
+	OOPD::Session session;
+	conn_t(int conn): conn(conn), session(*yourDatabase) {}
+};
+
+struct yoursqlQuery
+{
+	conn_t& conn;
+	std::string sql;
+	yoursqlQuery(conn_t& conn, std::string sql): conn(conn), sql(sql) {}
 };
 
 int s;
@@ -144,8 +144,8 @@ sockaddr_in servaddr;
 socklen_t len;
 
 std::vector<conn_t> conns;
-OOPD::OOPDB *yourDatabase;
 std::queue<yoursqlQuery> queries;
+std::map<int, unsigned> connMap;
 
 std::mutex queriesMutex;
 
@@ -155,6 +155,7 @@ void getConnection()
 	{
 		int conn = accept(s, (sockaddr*)(&servaddr), &len);
 		conns.push_back(conn);
+		connMap[conn] = conns.size() - 1;
 		std::clog << getTime() << CYAN << "New connection: " << GREEN << conn << RESET << std::endl;
 	}
 }
@@ -193,7 +194,7 @@ void getData()
 					{
 						std::clog << getTime() << GREEN << "Received" << YELLOW << std::setw(4) << it->conn << RESET << ' ' << sql << std::endl;
 						queriesMutex.lock();
-						queries.push(yoursqlQuery(it->conn, sql));
+						queries.push(yoursqlQuery(conns[connMap[it->conn]], sql));
 						queriesMutex.unlock();
 					}
 				}
@@ -214,12 +215,12 @@ void execute()
 			queriesMutex.unlock();
 
 			std::stringstream os("");
-			yourDatabase->execute(query.sql, os);
+			query.conn.session.execute(query.sql, os);
 			std::string output = os.str() + endChar;
 
-			std::clog << getTime() << GREEN << "Executed" << YELLOW << std::setw(4) << query.conn << ' ' << RESET << query.sql << std::endl;
+			std::clog << getTime() << GREEN << "Executed" << YELLOW << std::setw(4) << query.conn.conn << ' ' << RESET << query.sql << std::endl;
 
-			send(query.conn, output.c_str(), output.length(), 0);
+			send(query.conn.conn, output.c_str(), output.length(), 0);
 		}
 		else
 			queriesMutex.unlock();
@@ -227,13 +228,11 @@ void execute()
 	}
 }
 
-}
-
-int startServer(OOPD::OOPDB& database, std::string serverIp, uint16_t port)
+int startServer(dbSet& databases, std::string serverIp, uint16_t port)
 {
 	std::clog << getTime() << GREEN << "Initializing..." << RESET << std::endl;
 
-	yourDatabase = &database;
+	yourDatabase = &databases;
 
 	// New socket
 	s = socket(AF_INET, SOCK_STREAM, 0);
@@ -266,9 +265,6 @@ int startServer(OOPD::OOPDB& database, std::string serverIp, uint16_t port)
 	return 0;
 }
 
-namespace
-{
-
 // ==================== ^ Server ^ ==================== //
 // ==================== v Client v ==================== //
 
@@ -295,7 +291,7 @@ void fetchData()
 		// 设置超时时间
 		tv.tv_sec = 5;
 		tv.tv_usec = 0;
-		// 等待聊天
+		// 等待服务器发来的消息
 		retval = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 		if (retval == -1)
 		{
@@ -358,8 +354,6 @@ void clientRoutine()
 			fetchData();
 		}
 	}
-}
-
 }
 
 int startClient(std::string serverIp, uint16_t port)
