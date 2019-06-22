@@ -52,7 +52,8 @@ namespace OOPD
 		std::map<std::string, DataAddressType> DataAddress; // 同 Table 中的含义
 	public:
 		size_t size();
-		void print(const attrs& fields, std::ostream& o = std::cout);
+		void print(const attrs& fields, bool withTitle = true, std::ostream& o = std::cout);
+		void orderBy(const orders& order);
 		TemporaryTable(const Table& table);
 		TemporaryTable(const Table& table, std::vector<Data*> data);
 	};

@@ -116,28 +116,33 @@ namespace OOPD
 		}
 		else if (strLower[0] == "select")
 		{
-			auto f = std::find(strLower.begin(), strLower.end(), "into") - strLower.begin();
+			std::vector<interval> clauses = selectClauses(strLower);
 
+			enum clause_t { SELECT = 0, INTO, FROM, WHERE, GROUP, ORDER };
+
+			// 提取输出文件 start
 			bool import = false;
 
 			std::ostream* os = nullptr;
-			if (f == (int)strLower.size())
+			if (length(clauses[INTO]) == 0)
 				os = &o;
 			else
 			{
 				import = true;
-				std::string outputFileName = parseStringLiteral(str[f + 2]);
+				std::string outputFileName = parseStringLiteral(str[clauses[INTO].first + 2]);
 				std::ofstream* of = new std::ofstream(outputFileName, std::ios::out);
 				if (!of->is_open())
 					throw "Cannot open output file. Does the output file already exist?";
 				os = of;
 			}
-			auto p = std::find(strLower.begin(), strLower.end(), "from") - strLower.begin();
-			auto& tableName = str[p + 1];
+			// 提取输出文件 end
+
+			// 提取表名及列名 start
+			auto& tableName = str[clauses[FROM].first + 1];
 
 			Table& table = *getTable(tableName);
 
-			auto attrName = tokens(str.begin() + 1, str.begin() + p);
+			auto attrName = tokens(str.begin() + 1, str.begin() + clauses[FROM].first);
 			if (str[1] == "*")
 				attrName = table.columnNames;
 			for (auto iter = attrName.begin(); iter != attrName.end(); ++iter)
@@ -146,20 +151,39 @@ namespace OOPD
 					attrName.erase(iter);
 					break;
 				}
+			// 提取表名及列名 end
 
-			auto t = std::find(strLower.begin(), strLower.end(), "where") - strLower.begin();
+			// 提取 WHERE 子句 start
 			std::string whereStr = "";
-			if (t == (int)strLower.size())
+			if (length(clauses[WHERE]) != 0)
+				whereStr = concatenate(tokens(str.begin() + clauses[WHERE].first + 1, str.begin() + clauses[WHERE].second));
+
+			OOPD::WhereAttr where = SubWhere(table, whereStr);
+			// 提取 WHERE 子句 end
+
+			// 提取 ORDER BY 子句 start
+			auto ob = std::find(strLower.begin(), strLower.end(), "order") - strLower.begin();
+			orders orderClause;
+			if (length(clauses[ORDER]) != 0)
 			{
-				auto where = SubWhere(table, whereStr);
-				opt.DataShow(table, attrName, where, !import, *os);
+				for (unsigned i = clauses[ORDER].first + 2; i < clauses[ORDER].second; i += 2)
+				{
+					OOPD::sort_t order = OOPD::sort_t::ascending;
+					if (i + 1 < clauses[ORDER].second && strLower[i + 1] == "desc")
+						order = OOPD::sort_t::descending;
+					orderClause.push_back((order_t){str[i], order});
+					if (i + 1 < clauses[ORDER].second && strLower[i + 1] != ",")
+						++i;
+				}
 			}
 			else
-			{
-				whereStr = concatenate(tokens(str.begin() + t + 1, str.end()));
-				auto where = SubWhere(table, whereStr);
-				opt.DataShow(table, attrName, where, !import, *os);
-			}
+				orderClause.push_back((order_t){table.PrimaryCol, OOPD::sort_t::ascending});
+			// 提取 ORDER BY 子句 end
+
+			// 执行查询操作
+			//opt.DataShow(table, attrName, where, !import, *os);
+			opt.select(table, where, attrName, os == &o, groups(), orderClause, *os);
+			// 如果打开了文件则删除文件流
 			if (os != &o) delete os;
 		}
 		else throw "Unknown SQL command";

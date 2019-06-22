@@ -4,7 +4,7 @@ rm report.txt -f
 
 echo "YourSQL Automated Challenge - $(date +%c)" >>report.txt
 
-for i in {1..20}
+for i in {1..21}
 do
 	echo "Case #$i: Running"
 	timeout 30s ./main <$i.sql >$i.ans

@@ -19,7 +19,7 @@ std::string trimString(std::string str)
 
 // 对 MySQL 语句进行分词
 // 分词后的 tokens 放进一个 std::vector<std::string> 中后返回
-std::vector<std::string> tokenize(std::string raw)
+tokens tokenize(std::string raw)
 {
 	raw.push_back('\n');
 	std::vector<std::string> res;
@@ -89,6 +89,30 @@ std::vector<std::string> tokenize(std::string raw)
 		res.push_back({raw[i]});
 	}
 	return res;
+}
+
+// 切分 SELECT 语句，返回六个子句所在的区间（左闭右开）；保证返回值连续，若某子句不存在则返回空区间；返回值包含且一定包含六个 interval；需保证传入的参数均为小写
+std::vector<interval> selectClauses(tokens tokenLower)
+{
+	int select = std::find(tokenLower.begin(), tokenLower.end(), "select") - tokenLower.begin();
+	int into = std::find(tokenLower.begin(), tokenLower.end(), "into") - tokenLower.begin();
+	int from = std::find(tokenLower.begin(), tokenLower.end(), "from") - tokenLower.begin();
+	int where = std::find(tokenLower.begin(), tokenLower.end(), "where") - tokenLower.begin();
+	int group = std::find(tokenLower.begin(), tokenLower.end(), "group") - tokenLower.begin();
+	int order = std::find(tokenLower.begin(), tokenLower.end(), "order") - tokenLower.begin();
+	int end = tokenLower.size();
+	if (group == end) group = order;
+	if (where == end) where = group;
+	if (from == end) from = where;
+	if (into == end) into = from;
+	if (select == end) select = into;
+	return std::vector<interval>{interval(select, into), interval(into, from), interval(from, where), interval(where, group), interval(group, order), interval(order, end)};
+}
+
+// 返回区间长度
+int length(interval a)
+{
+	return a.second - a.first;
 }
 
 // 解析字符串字面值

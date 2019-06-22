@@ -62,17 +62,31 @@ namespace OOPD
 	// 创建有数据的临时表
 	TemporaryTable::TemporaryTable(const Table& table, std::vector<Data*> data): primary(table.PrimaryCol), columnNames(table.columnNames), DataAddress(table.DataAddress), rows(data) {}
 
-	// 输出表的内容，不包含标题
-	void TemporaryTable::print(const attrs& fields, std::ostream& o)
+	// 返回表中记录条数
+	size_t TemporaryTable::size()
 	{
-		auto end = rows.end();
-		const DataAddressType& info = DataAddress[primary];//对此数组进行排序，依据主键的大小
-		switch (info.type)
+		return rows.size();
+	}
+
+	// 输出表的内容，不包含标题
+	void TemporaryTable::print(const attrs& fields, bool withTitle, std::ostream& o)
+	{
+		if (rows.size() == 0)
+			return;//则不输出任何信息
+		if (withTitle)
 		{
-			case typeInt: std::sort(rows.begin(), end, SubDataShowCom(1, info.pos)); break;
-			case typeDouble: std::sort(rows.begin(), end, SubDataShowCom(2, info.pos)); break;
-			case typeChar: std::sort(rows.begin(), end, SubDataShowCom(3, info.pos)); break;
+			for (auto it = fields.begin(); it != fields.end(); ++it) //输出列名
+				o << *it << "\t";
+			o << std::endl;
 		}
+		auto end = rows.end();
+		// const DataAddressType& info = DataAddress[primary];//对此数组进行排序，依据主键的大小
+		// switch (info.type)
+		// {
+		// 	case typeInt: std::sort(rows.begin(), end, SubDataShowCom(1, info.pos)); break;
+		// 	case typeDouble: std::sort(rows.begin(), end, SubDataShowCom(2, info.pos)); break;
+		// 	case typeChar: std::sort(rows.begin(), end, SubDataShowCom(3, info.pos)); break;
+		// }
 		for (auto it = rows.begin(); it != end; ++it)//对于每一行
 		{
 			auto colEnd = fields.end();
@@ -96,9 +110,41 @@ namespace OOPD
 			o << std::endl;
 		}
 	}
-	size_t TemporaryTable::size()
+
+	// 对表中全部数据排序
+	void TemporaryTable::orderBy(const orders& order)
 	{
-		return rows.size();
+		auto sortOperator = [&](Data* a, Data* b) -> bool
+		{
+			for (auto iter = order.begin(); iter != order.end(); ++iter)
+			{
+				int id = DataAddress[iter->field].pos;
+				bool val = iter->sort == OOPD::sort_t::ascending ? false : true;
+				switch (DataAddress[iter->field].type)
+				{
+					case typeInt:
+					{
+						if (a->valInt[id] != b->valInt[id])
+							return val ^ (a->valInt[id] < b->valInt[id]);
+						break;
+					}
+					case typeDouble:
+					{
+						if (a->valDouble[id] != b->valDouble[id])
+							return val ^ (a->valDouble[id] < b->valDouble[id]);
+						break;
+					}
+					case typeChar:
+					{
+						if (a->valString[id] != b->valString[id])
+							return val ^ (a->valString[id] < b->valString[id]);
+						break;
+					}
+				}
+			}
+			return false;
+		};
+		std::sort(rows.begin(), rows.end(), sortOperator);
 	}
 
 	BPTree<int>* Table::GetTreeInt(const TableCreateAttr & KeyInfo)
