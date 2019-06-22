@@ -21,9 +21,14 @@ namespace OOPD
 		std::string field;
 		sort_t sort;
 	};
+	struct group_t
+	{
+		std::string field;
+		std::string function;
+	};
 }
 
-typedef std::vector<std::string> groups; // 定义分组方法
+typedef std::vector<OOPD::group_t> groups; // 定义分组操作函数（aggregate functions）
 typedef std::vector<OOPD::order_t> orders; // 定义排序方法
 
 tokens tokenize(std::string raw); // 对语句进行分词

@@ -1,4 +1,4 @@
-YourSQL Automated Challenge - Sat Jun 22 17:44:52 2019
+YourSQL Automated Challenge - Sun Jun 23 00:31:11 2019
 Case #1: Accepted
 Case #2: Accepted
 Case #3: Accepted
@@ -15,8 +15,8 @@ Case #13: Accepted
 Case #14: Accepted
 Case #15: Accepted
 Case #16: Accepted
-Case #17: Wrong Answer
-Case #18: Wrong Answer
+Case #17: Accepted
+Case #18: Accepted
 Case #19: Accepted
 Case #20: Wrong Answer
 Case #21: Wrong Answer

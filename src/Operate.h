@@ -50,7 +50,7 @@ namespace OOPD
 		//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
 		void DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, bool withTitle = true, std::ostream& o = std::cout);//如果是select *就直接将Table的colName传进来
 		TemporaryTable filter(Table& target, WhereAttr& where);
-		void select(Table& target, WhereAttr& where, attrs fields, bool withTitle = true, groups groupBy = groups(), orders orderBy = orders(), std::ostream& o = std::cout);
+		void select(Table& target, WhereAttr& where, attrs fields, bool withTitle = true, bool aggregate = false, const attrs& groupField = attrs(), const groups& groupBy = groups(), const orders& orderBy = orders(), std::ostream& o = std::cout);
 
 	private:
 		//-----次级操作，作为通用的代码被上述方法调用，名称以Sub开头-----//

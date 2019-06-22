@@ -1,3 +1,12 @@
+/**
+ * 服务器/客户端模块
+ * 采用原生 Unix socket 编写
+ *
+ * 代码从以下网页获取，并针对大作业实际需求作了较大幅度的修改：
+ * https://www.cnblogs.com/diligenceday/p/6241021.html
+ *
+*/
+
 #include "socket.h"
 
 #include <cstdio>
@@ -243,6 +252,7 @@ void execute()
 
 int startServer(std::map<std::string, OOPD::DataBase*>& databases, std::string serverIp, uint16_t port)
 {
+#ifndef ONLINE_JUDGE
 	std::clog << getTime() << GREEN << "Initializing..." << RESET << std::endl;
 
 	yourDatabase = &databases;
@@ -275,6 +285,7 @@ int startServer(std::map<std::string, OOPD::DataBase*>& databases, std::string s
 	while (!bExit) cpuBreak();
 
 	std::clog << getTime() << MAGENTA << "Bye" << RESET << std::endl;
+#endif
 	return 0;
 }
 
@@ -372,6 +383,7 @@ void clientRoutine()
 
 int startClient(std::string serverIp, uint16_t port)
 {
+#ifndef ONLINE_JUDGE
 	// 定义sockfd
 	sock_cli = socket(AF_INET, SOCK_STREAM, 0);
 	// 定义sockaddr_in
@@ -391,5 +403,6 @@ int startClient(std::string serverIp, uint16_t port)
 	clientRoutine();
 	close(sock_cli);
 	std::cout << MAGENTA << "Bye" << RESET << std::endl;
+#endif
 	return 0;
 }

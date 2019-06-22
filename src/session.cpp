@@ -141,9 +141,39 @@ namespace OOPD
 			auto& tableName = str[clauses[FROM].first + 1];
 
 			Table& table = *getTable(tableName);
-
-			auto attrName = tokens(str.begin() + 1, str.begin() + clauses[FROM].first);
-			if (str[1] == "*")
+			bool aggregate = false;
+			tokens attrName;
+			groups group;
+			for (unsigned i = clauses[SELECT].first + 1; i < clauses[SELECT].second; )
+			{
+				if (str[i] == "*")
+				{
+					attrName = table.columnNames;
+					break;
+				}
+				else if (i + 1 < clauses[SELECT].second)
+				{
+					if (str[i + 1] == "(")
+					{
+						attrName.push_back(str[i] + "(" + str[i + 2] + ")");
+						if (str[i + 2] != "*")
+							group.push_back((group_t){str[i + 2], str[i]});
+						i += 4;
+						aggregate = true;
+					}
+					else
+					{
+						attrName.push_back(str[i]);
+						i += 2;
+					}
+				}
+				else
+				{
+					attrName.push_back(str[i]);
+					++i;
+				}
+			}
+			if (str[clauses[SELECT].first + 1] == "*")
 				attrName = table.columnNames;
 			for (auto iter = attrName.begin(); iter != attrName.end(); ++iter)
 				if (*iter == hiddenPrimaryKey)
@@ -161,8 +191,17 @@ namespace OOPD
 			OOPD::WhereAttr where = SubWhere(table, whereStr);
 			// 提取 WHERE 子句 end
 
+			// 提取 GROUP BY 子句 start
+			attrs groupField;
+			if (length(clauses[GROUP]) != 0)
+			{
+				for (unsigned i = clauses[GROUP].first + 2; i < clauses[GROUP].second; i += 2)
+					groupField.push_back(str[i]);
+			}
+
+			// 提取 GROUP BY 子句 end
+
 			// 提取 ORDER BY 子句 start
-			auto ob = std::find(strLower.begin(), strLower.end(), "order") - strLower.begin();
 			orders orderClause;
 			if (length(clauses[ORDER]) != 0)
 			{
@@ -181,8 +220,7 @@ namespace OOPD
 			// 提取 ORDER BY 子句 end
 
 			// 执行查询操作
-			//opt.DataShow(table, attrName, where, !import, *os);
-			opt.select(table, where, attrName, os == &o, groups(), orderClause, *os);
+			opt.select(table, where, attrName, os == &o, aggregate, groupField, group, orderClause, *os);
 			// 如果打开了文件则删除文件流
 			if (os != &o) delete os;
 		}

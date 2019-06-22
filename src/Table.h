@@ -46,14 +46,16 @@ namespace OOPD
 	class TemporaryTable final
 	{
 	private:
-		std::vector<Data*> rows;
+		std::vector<Data> rows;
 		std::string primary;
 		std::vector<std::string> columnNames;
 		std::map<std::string, DataAddressType> DataAddress; // 同 Table 中的含义
 	public:
 		size_t size();
 		void print(const attrs& fields, bool withTitle = true, std::ostream& o = std::cout);
+		TemporaryTable aggregate(const attrs& fields, const groups& group);
 		void orderBy(const orders& order);
+		TemporaryTable();
 		TemporaryTable(const Table& table);
 		TemporaryTable(const Table& table, std::vector<Data*> data);
 	};

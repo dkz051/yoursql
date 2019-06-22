@@ -243,39 +243,8 @@ namespace OOPD
 	//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
 	void Operate::DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, bool withTitle, std::ostream& o)
 	{
-	//	std::vector<Data*> range = SubWhere(target, where);
 		TemporaryTable result = filter(target, where);
 		result.print(colName, withTitle, o);
-	/*	auto end = range.end();
-		const DataAddressType& info = target.DataAddress[target.PrimaryCol];//对此数组进行排序，依据主键的大小
-		switch (info.type)
-		{
-			case typeInt: std::sort(range.begin(), end, SubDataShowCom(1, info.pos)); break;
-			case typeDouble: std::sort(range.begin(), end, SubDataShowCom(2, info.pos)); break;
-			case typeChar: std::sort(range.begin(), end, SubDataShowCom(3, info.pos)); break;
-		}
-		for (auto it = range.begin(); it != end; ++it)//对于每一行
-		{
-			auto colEnd = colName.end();
-			for (auto colIt = colName.begin(); colIt != colEnd; ++colIt)//对于该行的每一列
-			{
-				const DataAddressType& info = target.DataAddress[*colIt];
-
-				if (colIt != colName.begin()) o << '\t';
-
-				switch (info.type)
-				{
-					case typeInt:
-						if ((*it)->valInt[info.pos] == 0x3f3f3f) {o << "NULL"; break;}
-						else {o << (*it)->valInt[info.pos]; break;}
-					case typeDouble:
-						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL"; break;}
-						else {o << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos]; break;}
-					case typeChar: o << (*it)->valString[info.pos]; break;
-				}
-			}
-			o << std::endl;
-		}*/
 		return;
 	}
 
@@ -285,9 +254,10 @@ namespace OOPD
 		return TemporaryTable(target, SubWhere(target, where));
 	}
 
-	void Operate::select(Table& target, WhereAttr& where, attrs fields, bool withTitle, groups groupBy, orders orderBy, std::ostream& o)
+	void Operate::select(Table& target, WhereAttr& where, attrs fields, bool withTitle, bool aggregate, const attrs& groupField, const groups& groupBy, const orders& orderBy, std::ostream& o)
 	{
 		TemporaryTable result = filter(target, where);
+		if (aggregate) result = result.aggregate(groupField, groupBy);
 		result.orderBy(orderBy);
 		result.print(fields, withTitle, o);
 	}
