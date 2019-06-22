@@ -25,6 +25,18 @@ namespace OOPD
 	void Session::start()
 	{
 		std::string sql;
+		std::fstream file;
+		file.open("data.sql", std::ios::in);
+		while (getline(file, sql, ';'))
+		{
+			sql = trimString(sql);
+			if (sql == "") break;
+			execute(sql, std::cout);
+		}
+		file.close();
+
+		file.open("data.sql", std::ios::out | std::ios::app);
+
 		while (getline(std::cin, sql, ';'))
 		{
 			sql = trimString(sql);
