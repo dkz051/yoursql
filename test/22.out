@@ -1,0 +1,30 @@
+id	aint	bchar	cdouble
+1	11	a	100
+2	4144958	b	NULL
+3	13	c	300
+4	14	NULL	4144958
+5	15	e	500
+6	4144958	f	4144958
+7	17	g	700
+8	NULL	h	4144958
+9	19	i	900
+10	20	j	4144958
+id	aint	bchar	cdouble
+2	4144958	b	NULL
+6	4144958	f	4144958
+id	aint	bchar	cdouble
+4	14	NULL	4144958
+6	4144958	f	4144958
+8	NULL	h	4144958
+10	20	j	4144958
+bchar
+a
+b
+c
+NULL
+e
+f
+g
+h
+i
+j
