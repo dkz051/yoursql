@@ -35,7 +35,7 @@ std::vector<std::string> tokenize(std::string raw)
 			current = "";
 		}
 	};
-	for (int i=0; i<raw.length(); ++i)
+	for (int i = 0; i < raw.length(); ++i)
 	{
 		if (inString)
 		{
@@ -44,7 +44,7 @@ std::vector<std::string> tokenize(std::string raw)
 			current += raw[i];
 			if (raw[i] == stringDelimiter)
 			{
-				if (raw[i+1] == stringDelimiter)
+				if (raw[i + 1] == stringDelimiter)
 				{
 					current += stringDelimiter;
 					i++;
@@ -54,7 +54,7 @@ std::vector<std::string> tokenize(std::string raw)
 					inString = false;
 				}
 			}
-			if (raw[i] == '\\' && raw[i+1] != '\n')
+			if (raw[i] == '\\' && raw[i + 1] != '\n')
 			{
 				i++;
 				current += raw[i];
@@ -159,13 +159,13 @@ std::string stringToUpper(std::string str)
 	return str;
 }
 
-// 连接多个字符串，用 delimeter 隔开
-std::string concatenate(std::vector<std::string> tokens, char delimeter)
+// 连接多个字符串，用 delimiter 隔开
+std::string concatenate(std::vector<std::string> tokens, char delimiter)
 {
 	std::string ans = "";
 	for (auto iter = tokens.begin(); iter != tokens.end(); ++iter)
 	{
-		if (iter != tokens.begin()) ans += delimeter;
+		if (iter != tokens.begin()) ans += delimiter;
 		ans += *iter;
 	}
 	return ans;

@@ -24,9 +24,13 @@ namespace OOPD
 
 	void Session::start()
 	{
-		std::string command;
-		while (getline(std::cin, command, ';'))
-			execute(command, std::cout);
+		std::string sql;
+		while (getline(std::cin, sql, ';'))
+		{
+			sql = trimString(sql);
+			if (sql == "") break;
+			execute(sql, std::cout);
+		}
 		return;
 	}
 

@@ -48,7 +48,7 @@ const char BOLDWHITE[]   = "\033[1m\033[37m";
 class commandBuffer
 {
 private:
-	static const char delimeter = ';';
+	static const char delimiter = ';';
 	std::string sqlBuffer;
 	char inQuote; // '\0' - none, '\'' - single, '\"' - double
 	bool waitEscape;
@@ -62,7 +62,7 @@ public:
 		{
 			char& c = sqlBuffer[position];
 			if (waitEscape) waitEscape = false;
-			else if (c == delimeter && !inQuote) return true;
+			else if (c == delimiter && !inQuote) return true;
 			else
 			{
 				if (c == '\'' || c == '\"')
@@ -77,11 +77,11 @@ public:
 		}
 		return false;
 	}
-	std::string sql(bool includeDelimeter)
+	std::string sql(bool includeDelimiter)
 	{
 		if (hasSql())
 		{
-			std::string ret = sqlBuffer.substr(0, position + int(includeDelimeter)); // 视情况加或不加分号
+			std::string ret = sqlBuffer.substr(0, position + int(includeDelimiter)); // 视情况加或不加分号
 			sqlBuffer = sqlBuffer.substr(position + 1);
 			position = 0;
 			return ret;

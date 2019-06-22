@@ -1,6 +1,7 @@
 #ifndef OPERATE_H
 #define OPERATE_H
 //-----------------------------------------//
+#include "tools.h"
 #include "DataBase.h"
 #include <map>
 #include <list>
@@ -47,6 +48,7 @@ namespace OOPD
 		bool DataUpdate(Table& target, WhereAttr& where, std::vector<DataUpdateAttr>& attr);
 		//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
 		void DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, bool withTitle = true, std::ostream& o = std::cout);//如果是select *就直接将Table的colName传进来
+		Table select(Table& target, std::vector<std::string>& colName, WhereAttr& where, orders orderBy);
 
 	private:
 		//-----次级操作，作为通用的代码被上述方法调用，名称以Sub开头-----//
