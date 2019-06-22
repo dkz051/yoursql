@@ -230,11 +230,12 @@ namespace OOPD
 			ans.valDouble.resize(pos[typeDouble]);
 			ans.valString.resize(pos[typeChar]);
 
+			// 用来分组的列，直接从表中拿数据，内容一定一样
 			for (auto iter = fields.begin(); iter != fields.end(); ++iter)
 			{
 				OOPD::DataType type = DA[*iter].type;
-				int id1 = DA[*iter].pos;
-				int id2 = DataAddress[*iter].pos;
+				int id1 = DA[*iter].pos; // 获取在最终返回的临时表中列的序号
+				int id2 = DataAddress[*iter].pos; // 获取在原始数据表中列的序号
 				if (type == typeInt)
 					ans.valInt[id1] = begin->valInt[id2];
 				else if (type == typeDouble)
@@ -243,19 +244,20 @@ namespace OOPD
 					ans.valString[id1] = begin->valString[id2];
 			}
 
+			// 对于每个数字函数调用，计算其值
 			for (auto iter = group.begin(); iter != group.end(); ++iter)
 			{
-				std::string function = stringToUpper(iter->function);
-				std::string name = function + '(' + iter->field + ')';
-				OOPD::DataType type = DA[name].type;
-				int id = DA[name].pos;
+				std::string function = stringToUpper(iter->function); // 函数名称
+				std::string name = function + '(' + iter->field + ')'; // 列名
+				OOPD::DataType type = DA[name].type; // 要返回的类型
+				int id = DA[name].pos; // 列序号
 
-				double sum = 0.0, sum2 = 0.0, dblE;
-				int count = 0, intE;
-				std::string strE;
+				double sum = 0.0, sum2 = 0.0, dblE; // sum - 求和，sum2 - 平方和，dblE - double 型极值
+				int count = 0, intE; // count - 计数，intE - int 型极值
+				std::string strE; // strE - string 型极值
 
-				int sId = DA[iter->field].pos;
-				OOPD::DataType sType = DA[iter->field].type;
+				int sId = DataAddress[iter->field].pos; // 被计算的列的编号
+				OOPD::DataType sType = DA[iter->field].type; // 及类型
 
 				bool flag = false;
 				for (auto jter = begin; jter != end; ++jter)

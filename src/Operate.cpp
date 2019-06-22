@@ -136,8 +136,8 @@ namespace OOPD
 			const DataAddressType& info = target.DataAddress[it->colName];
 			switch (info.type)
 			{
-				case typeInt: newData->valInt[info.pos] = SubStringToNum<int>(it->val); break;
-				case typeDouble: newData->valDouble[info.pos] = SubStringToNum<double>(it->val); break;
+				case typeInt: newData->valInt[info.pos] = it->val == "NULL" ? 0x3f3f3f : SubStringToNum<int>(it->val); break;
+				case typeDouble: newData->valDouble[info.pos] = it->val == "NULL" ? 0x3f3f3f : SubStringToNum<double>(it->val); break;
 				case typeChar: newData->valString[info.pos] = std::move(it->val); break;
 			}
 		}
