@@ -19,7 +19,7 @@ namespace OOPD
 	class Session
 	{
 		std::string selected; // 保存当前活动数据库的名称。注意不能使用指针（可能会被其他 Session 删除，变成野指针；也不能用静态变量，因为要保证各客户端的会话独立）
-		dbSet& db;
+		std::map<std::string, OOPD::DataBase*>& db;
 		Operate opt;
 
 		DataBase* getDatabase(const std::string& dbName = "");
@@ -39,7 +39,7 @@ namespace OOPD
 		//在SubWhere中调用的次级子方法，用于在一定规则下将endOfNode保持为最小值
 		int& SubMin(int& endOfNode, const int& num);
 	public:
-		Session(dbSet& dbList): selected(""), db(dbList) {}
+		Session(std::map<std::string, OOPD::DataBase*>& dbList): selected(""), db(dbList) {}
 		~Session() {}
 		void start();
 		void execute(std::string sql, std::ostream& o = std::cout);

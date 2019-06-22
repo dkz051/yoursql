@@ -1,5 +1,7 @@
 #include "Table.h"
 
+#include "Operate.h"
+
 namespace OOPD
 {
 	Table::Table(std::vector<TableCreateAttr> & KeyInfo, std::vector<TableCreateAttr> & ColInfo, const int tree_rank, const int type_num) : TreeRank(tree_rank), TypeNum(type_num)
@@ -53,6 +55,51 @@ namespace OOPD
 		DataAddress.clear();
 	}
 	//析构表
+
+	// 创建空的临时表
+	TemporaryTable::TemporaryTable(const Table& table): primary(table.PrimaryCol), columnNames(table.columnNames), DataAddress(table.DataAddress) {}
+
+	// 创建有数据的临时表
+	TemporaryTable::TemporaryTable(const Table& table, std::vector<Data*> data): primary(table.PrimaryCol), columnNames(table.columnNames), DataAddress(table.DataAddress), rows(data) {}
+
+	// 输出表的内容，不包含标题
+	void TemporaryTable::print(const attrs& fields, std::ostream& o)
+	{
+		auto end = rows.end();
+		const DataAddressType& info = DataAddress[primary];//对此数组进行排序，依据主键的大小
+		switch (info.type)
+		{
+			case typeInt: std::sort(rows.begin(), end, SubDataShowCom(1, info.pos)); break;
+			case typeDouble: std::sort(rows.begin(), end, SubDataShowCom(2, info.pos)); break;
+			case typeChar: std::sort(rows.begin(), end, SubDataShowCom(3, info.pos)); break;
+		}
+		for (auto it = rows.begin(); it != end; ++it)//对于每一行
+		{
+			auto colEnd = fields.end();
+			for (auto colIt = fields.begin(); colIt != colEnd; ++colIt)//对于该行的每一列
+			{
+				const DataAddressType& info = DataAddress[*colIt];
+
+				if (colIt != fields.begin()) o << '\t';
+
+				switch (info.type)
+				{
+					case typeInt:
+						if ((*it)->valInt[info.pos] == 0x3f3f3f) {o << "NULL"; break;}
+						else {o << (*it)->valInt[info.pos]; break;}
+					case typeDouble:
+						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL"; break;}
+						else {o << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos]; break;}
+					case typeChar: o << (*it)->valString[info.pos]; break;
+				}
+			}
+			o << std::endl;
+		}
+	}
+	size_t TemporaryTable::size()
+	{
+		return rows.size();
+	}
 
 	BPTree<int>* Table::GetTreeInt(const TableCreateAttr & KeyInfo)
 	{

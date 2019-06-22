@@ -1,8 +1,8 @@
 #ifndef BPTREE_H
 #define BPTREE_H
 
-#include "BPTreeNode.h"
 #include <iostream>
+#include "BPTreeNode.h"
 
 namespace OOPD
 {

@@ -1,9 +1,10 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 //-----------------------------------------//
-#include "Table.h"
 #include <map>
 #include <string>
+
+#include "Table.h"
 //-----------------------------------------//
 //DataBase类中含有一个Table对象的容器
 namespace OOPD
@@ -16,11 +17,7 @@ namespace OOPD
 	private:
 		std::map<std::string, Table*> TableList;
 	public:
-		~DataBase()
-		{
-			for (auto it = TableList.begin(); it != TableList.end(); ++it)
-				delete it->second;
-		}
+		~DataBase();
 	};
 }
 

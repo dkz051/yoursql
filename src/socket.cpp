@@ -1,5 +1,10 @@
 #include "socket.h"
 
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <ctime>
+
 #include <iostream>
 #include <thread>
 #include <list>
@@ -10,10 +15,6 @@
 #include <queue>
 #include <mutex>
 #include <iomanip>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <ctime>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -122,7 +123,7 @@ std::string getTime(const char* format = "[%s] ")
 // ==================== ^ Common ^ ==================== //
 // ==================== v Server v ==================== //
 
-dbSet *yourDatabase = nullptr;
+std::map<std::string, OOPD::DataBase*> *yourDatabase = nullptr;
 
 struct conn_t
 {
@@ -240,7 +241,7 @@ void execute()
 	}
 }
 
-int startServer(dbSet& databases, std::string serverIp, uint16_t port)
+int startServer(std::map<std::string, OOPD::DataBase*>& databases, std::string serverIp, uint16_t port)
 {
 	std::clog << getTime() << GREEN << "Initializing..." << RESET << std::endl;
 

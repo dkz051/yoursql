@@ -5,12 +5,8 @@
 #include <vector>
 #include <map>
 
-#include "DataBase.h"
-
 typedef std::vector<std::string> tokens; // 保存被分词的 MySQL 语句，包含原 MySQL 语句中的每个 token
 typedef std::vector<std::string> attrs; // 保存若干个列的名称。虽然与 tokens 本质相同，但在程序中的语义不同
-
-typedef std::map<std::string, OOPD::DataBase*> dbSet; // 数据库的集合
 
 extern const std::string hiddenPrimaryKey; // 没有主键时自动插入一个默认主键 (int, auto_increment)；该名称由于带了特殊符号因此不会出现在输入中
 

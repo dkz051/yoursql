@@ -1,4 +1,5 @@
 #include "Operate.h"
+
 #include "tools.h"
 
 namespace OOPD
@@ -242,8 +243,8 @@ namespace OOPD
 	//查询（打印出）符合要求的行，传入参数为进行操作的数据表、WHERE子句
 	void Operate::DataShow(Table& target, std::vector<std::string>& colName, WhereAttr& where, bool withTitle, std::ostream& o)
 	{
-		std::vector<Data*> range = SubWhere(target, where);
-		if (range.size() == 0)//如果没有元素，即没有符合要求的行
+		TemporaryTable result = select(target, where);
+		if (result.size() == 0) // 如果没有元素，即没有符合要求的行
 			return;//则不输出任何信息
 		if (withTitle)
 		{
@@ -251,37 +252,14 @@ namespace OOPD
 				o << *it << "\t";
 			o << std::endl;
 		}
-		auto end = range.end();
-		const DataAddressType& info = target.DataAddress[target.PrimaryCol];//对此数组进行排序，依据主键的大小
-		switch (info.type)
-		{
-			case typeInt: std::sort(range.begin(), end, SubDataShowCom(1, info.pos)); break;
-			case typeDouble: std::sort(range.begin(), end, SubDataShowCom(2, info.pos)); break;
-			case typeChar: std::sort(range.begin(), end, SubDataShowCom(3, info.pos)); break;
-		}
-		for (auto it = range.begin(); it != end; ++it)//对于每一行
-		{
-			auto colEnd = colName.end();
-			for (auto colIt = colName.begin(); colIt != colEnd; ++colIt)//对于该行的每一列
-			{
-				const DataAddressType& info = target.DataAddress[*colIt];
-
-				if (colIt != colName.begin()) o << '\t';
-
-				switch (info.type)
-				{
-					case typeInt:
-						if ((*it)->valInt[info.pos] == 0x3f3f3f) {o << "NULL"; break;}
-						else {o << (*it)->valInt[info.pos]; break;}
-					case typeDouble:
-						if (int((*it)->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL"; break;}
-						else {o << std::fixed << std::setprecision(4) << (*it)->valDouble[info.pos]; break;}
-					case typeChar: o << (*it)->valString[info.pos]; break;
-				}
-			}
-			o << std::endl;
-		}
+		result.print(colName, o);
 		return;
+	}
+
+	// 根据条件筛选数据
+	TemporaryTable Operate::select(Table& target, WhereAttr& where)
+	{
+		return TemporaryTable(target, SubWhere(target, where));
 	}
 
 	//---------------------------------------------------------------------------------------------------------------------------------------//

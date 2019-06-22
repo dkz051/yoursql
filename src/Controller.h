@@ -2,8 +2,9 @@
 #define CONTROLLER_H
 //-----------------------------------------//
 #include <string>
-#include "Operate.h"
+
 #include "tools.h"
+#include "Operate.h"
 //-----------------------------------------//
 //Controller类是数据库工作过程的总控，负责与用户进行交互
 //Controller类通过指针/引用访问OOPDB类的底层数据和Operate对象

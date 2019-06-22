@@ -1,9 +1,10 @@
-#include <iostream>
-#include <string>
-#include <exception>
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
+
+#include <iostream>
+#include <string>
+#include <exception>
 
 #include "OOPDB.h"
 #include "socket.h"
@@ -17,7 +18,7 @@ role_t mode = role_t::local;
 std::string serverIp(defaultIp);
 uint16_t port = 2333;
 
-static dbSet yourDatabase;
+static std::map<std::string, OOPD::DataBase*> yourDatabase;
 
 int main(int argc, char *argv[])
 {
