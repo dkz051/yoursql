@@ -1,4 +1,4 @@
-ï»¿#include "session.h"
+#include "session.h"
 
 #include <fstream>
 
@@ -6,7 +6,7 @@
 
 namespace OOPD
 {
-	// æ ¹æ®åç§°è·å–æ•°æ®åº“çš„æŒ‡é’ˆã€‚å¦‚æœçœç•¥æ•°æ®åº“ååˆ™è¿”å›å½“å‰æ´»åŠ¨æ•°æ®åº“ã€‚å¦‚æœè¯¥æ•°æ®åº“ä¸å­˜åœ¨åˆ™æŠ›å‡ºå¼‚å¸¸
+	// ¸ù¾İÃû³Æ»ñÈ¡Êı¾İ¿âµÄÖ¸Õë¡£Èç¹ûÊ¡ÂÔÊı¾İ¿âÃûÔò·µ»Øµ±Ç°»î¶¯Êı¾İ¿â¡£Èç¹û¸ÃÊı¾İ¿â²»´æÔÚÔòÅ×³öÒì³£
 	DataBase* Session::getDatabase(const std::string& dbName)
 	{
 		std::string dbn = dbName == "" ? selected : dbName;
@@ -14,7 +14,7 @@ namespace OOPD
 		else throw "Database does not exist";
 	}
 
-	// æ ¹æ®åç§°è·å–è¡¨çš„æŒ‡é’ˆã€‚å¦‚æœçœç•¥æ•°æ®åº“ååˆ™åœ¨å½“å‰æ´»åŠ¨æ•°æ®åº“ä¸­æŸ¥æ‰¾ã€‚å¦‚æœè¯¥è¡¨ä¸å­˜åœ¨åˆ™æŠ›å‡ºå¼‚å¸¸
+	// ¸ù¾İÃû³Æ»ñÈ¡±íµÄÖ¸Õë¡£Èç¹ûÊ¡ÂÔÊı¾İ¿âÃûÔòÔÚµ±Ç°»î¶¯Êı¾İ¿âÖĞ²éÕÒ¡£Èç¹û¸Ã±í²»´æÔÚÔòÅ×³öÒì³£
 	Table* Session::getTable(const std::string& tableName, const std::string& dbName)
 	{
 		DataBase* db = getDatabase(dbName);
@@ -49,10 +49,10 @@ namespace OOPD
 
 	void Session::execute(std::string sql, std::ostream& o)
 	{
-		auto str = tokenize(sql), strLower = str; // è°ƒç”¨ tokenize å‡½æ•°åˆ†è¯
-		std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::stringToLower); // å…¨éƒ¨å°å†™
+		auto str = tokenize(sql), strLower = str; // µ÷ÓÃ tokenize º¯Êı·Ö´Ê
+		std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::stringToLower); // È«²¿Ğ¡Ğ´
 
-		if (str.size() < 2) throw "Not a complete statement"; // ä¸æ˜¯å®Œæ•´è¯­å¥
+		if (str.size() < 2) throw "Not a complete statement"; // ²»ÊÇÍêÕûÓï¾ä
 		else if (strLower[0] == "create")
 		{
 			if (strLower[1] == "database")
@@ -129,28 +129,33 @@ namespace OOPD
 		}
 		else if (strLower[0] == "select")
 		{
-			auto f = std::find(strLower.begin(), strLower.end(), "into") - strLower.begin();
+			std::vector<interval> clauses = selectClauses(strLower);
 
+			enum clause_t { SELECT = 0, INTO, FROM, WHERE, GROUP, ORDER };
+
+			// ÌáÈ¡Êä³öÎÄ¼ş start
 			bool import = false;
 
 			std::ostream* os = nullptr;
-			if (f == (int)strLower.size())
+			if (length(clauses[INTO]) == 0)
 				os = &o;
 			else
 			{
 				import = true;
-				std::string outputFileName = parseStringLiteral(str[f + 2]);
+				std::string outputFileName = parseStringLiteral(str[clauses[INTO].first + 2]);
 				std::ofstream* of = new std::ofstream(outputFileName, std::ios::out);
 				if (!of->is_open())
 					throw "Cannot open output file. Does the output file already exist?";
 				os = of;
 			}
-			auto p = std::find(strLower.begin(), strLower.end(), "from") - strLower.begin();
-			auto& tableName = str[p + 1];
+			// ÌáÈ¡Êä³öÎÄ¼ş end
+
+			// ÌáÈ¡±íÃû¼°ÁĞÃû start
+			auto& tableName = str[clauses[FROM].first + 1];
 
 			Table& table = *getTable(tableName);
 
-			auto attrName = tokens(str.begin() + 1, str.begin() + p);
+			auto attrName = tokens(str.begin() + 1, str.begin() + clauses[FROM].first);
 			if (str[1] == "*")
 				attrName = table.columnNames;
 			for (auto iter = attrName.begin(); iter != attrName.end(); ++iter)
@@ -159,20 +164,39 @@ namespace OOPD
 					attrName.erase(iter);
 					break;
 				}
+			// ÌáÈ¡±íÃû¼°ÁĞÃû end
 
-			auto t = std::find(strLower.begin(), strLower.end(), "where") - strLower.begin();
+			// ÌáÈ¡ WHERE ×Ó¾ä start
 			std::string whereStr = "";
-			if (t == (int)strLower.size())
+			if (length(clauses[WHERE]) != 0)
+				whereStr = concatenate(tokens(str.begin() + clauses[WHERE].first + 1, str.begin() + clauses[WHERE].second));
+
+			OOPD::WhereAttr where = SubWhere(table, whereStr);
+			// ÌáÈ¡ WHERE ×Ó¾ä end
+
+			// ÌáÈ¡ ORDER BY ×Ó¾ä start
+			auto ob = std::find(strLower.begin(), strLower.end(), "order") - strLower.begin();
+			orders orderClause;
+			if (length(clauses[ORDER]) != 0)
 			{
-				auto where = SubWhere(table, whereStr);
-				opt.DataShow(table, attrName, where, !import, *os);
+				for (unsigned i = clauses[ORDER].first + 2; i < clauses[ORDER].second; i += 2)
+				{
+					OOPD::sort_t order = OOPD::sort_t::ascending;
+					if (i + 1 < clauses[ORDER].second && strLower[i + 1] == "desc")
+						order = OOPD::sort_t::descending;
+					orderClause.push_back((order_t){str[i], order});
+					if (i + 1 < clauses[ORDER].second && strLower[i + 1] != ",")
+						++i;
+				}
 			}
 			else
-			{
-				whereStr = concatenate(tokens(str.begin() + t + 1, str.end()));
-				auto where = SubWhere(table, whereStr);
-				opt.DataShow(table, attrName, where, !import, *os);
-			}
+				orderClause.push_back((order_t){table.PrimaryCol, OOPD::sort_t::ascending});
+			// ÌáÈ¡ ORDER BY ×Ó¾ä end
+
+			// Ö´ĞĞ²éÑ¯²Ù×÷
+			//opt.DataShow(table, attrName, where, !import, *os);
+			opt.select(table, where, attrName, os == &o, groups(), orderClause, *os);
+			// Èç¹û´ò¿ªÁËÎÄ¼şÔòÉ¾³ıÎÄ¼şÁ÷
 			if (os != &o) delete os;
 		}
 		else throw "Unknown SQL command";
@@ -296,7 +320,7 @@ namespace OOPD
 		}
 		std::string whereStr(concatenate(whereClause));
 		auto temp = SubWhere(targetTable, whereStr);
-		return opt.DataDelete(targetTable, temp);//è°ƒç”¨SubWhereè·å¾—Whereå‚æ•°ï¼Œå¹¶è°ƒç”¨DataDeleteæ–¹æ³•
+		return opt.DataDelete(targetTable, temp);//µ÷ÓÃSubWhere»ñµÃWhere²ÎÊı£¬²¢µ÷ÓÃDataDelete·½·¨
 	}
 
 	//bool Session::UPDATE(std::string& str3)
@@ -328,74 +352,74 @@ namespace OOPD
 
 	WhereAttr Session::SubWhere(Table& target, std::string& wholeStr)
 	{
-		//é¦–å…ˆåˆ¤å®šæ˜¯å¦ä¼ å…¥ç©ºå­—ç¬¦ä¸²ï¼ˆè¿™æ˜¯ä¸è°ƒç”¨å‡½æ•°çš„çº¦å®šï¼Œè‹¥è¾“å…¥ä¸­æœªç»™å‡ºWHEREå­å¥ï¼Œåˆ™ç›´æ¥ä¼ å…¥ç©ºå­—ç¬¦ä¸²ï¼‰
+		//Ê×ÏÈÅĞ¶¨ÊÇ·ñ´«Èë¿Õ×Ö·û´®£¨ÕâÊÇÓëµ÷ÓÃº¯ÊıµÄÔ¼¶¨£¬ÈôÊäÈëÖĞÎ´¸ø³öWHERE×Ó¾ä£¬ÔòÖ±½Ó´«Èë¿Õ×Ö·û´®£©
 		if (wholeStr.size() == 0)
 			return WhereAttr(all, std::vector<WhereAttrSub1>(), std::vector<WhereAttr::node>(), std::vector<WhereAttrSub2>());
 
-		//æ„é€ ä¸€ä¸ªWhereAttrå¯¹è±¡ï¼Œé‡‡ç”¨traversalæ¨¡å¼ï¼Œä½†åªç”¨äºæ›´åŠ ç»†åˆ†åœ°å­˜å‚¨å½“å‰è¡¨è¾¾å¼
+		//¹¹ÔìÒ»¸öWhereAttr¶ÔÏó£¬²ÉÓÃtraversalÄ£Ê½£¬µ«Ö»ÓÃÓÚ¸ü¼ÓÏ¸·ÖµØ´æ´¢µ±Ç°±í´ïÊ½
 		WhereAttr traversalWhere(traversal, std::vector<WhereAttrSub1>(), std::vector<WhereAttr::node>(), std::vector<WhereAttrSub2>());
 		auto end = wholeStr.end();
-		int pos = 0;//è®°å½•å½“å‰ä¸‹æ ‡ä½ç½®
-		for (auto it = wholeStr.begin(); it != end; ++it)//éå†æ•´ä¸ªè¡¨è¾¾å¼
+		int pos = 0;//¼ÇÂ¼µ±Ç°ÏÂ±êÎ»ÖÃ
+		for (auto it = wholeStr.begin(); it != end; ++it)//±éÀúÕû¸ö±í´ïÊ½
 		{
-			int endOfNode = -1;//è®°å½•å½“å‰ç»“ç‚¹çš„ç»“æŸä½ç½®ï¼Œè¿™é‡Œæ˜¯å‡è®¾å½“å‰ç»“ç‚¹ä¸æ˜¯è¿ç®—ç¬¦ï¼Œå› æ­¤è‹¥å…¶æ˜¯è¿ç®—ç¬¦ï¼Œåˆ™endOfNode == pos
-			//åœ¨ä¸‹é¢çš„æ£€æµ‹è¿‡ç¨‹ä¸­ï¼Œä¼šä¸æ–­è°ƒè¯•endOfNodeçš„å€¼ï¼Œè‹¥æœªæ£€æµ‹åˆ°å¯¹åº”å­—ç¬¦(ä¸²)ï¼Œåˆ™endOfNodeä¼šä¿æŒåŸå€¼
-			//è‹¥æ£€æµ‹åˆ°å¯¹åº”å­—ç¬¦(ä¸²)ï¼Œä¸”å…¶ä½ç½®æ¯”endOfNodeè®°å½•çš„ä½ç½®æ›´é å‰ï¼Œåˆ™endOfNodeè°ƒæ•´ä¸ºè¯¥ä½ç½®
-			//è‹¥å‘ç°æŸæ¬¡æ£€æµ‹åendOfNode == posï¼Œåˆ™è¯´æ˜å½“å‰ç»“ç‚¹å°±æ˜¯è¢«æ£€æµ‹çš„å­—ç¬¦ï¼Œå› æ­¤å°†å…¶ä¿¡æ¯å‹å…¥å‚æ•°ç»“æ„å¹¶è·³è‡³ä¸‹ä¸€ä¸ªç»“ç‚¹çš„åˆ¤å®š
-			//å¦‚æœå…¨éƒ¨æ£€æµ‹è¿‡åä»æœªè¿›å…¥ä¸‹ä¸€ä¸ªç»“ç‚¹çš„åˆ¤å®šï¼Œå°±è¯´æ˜å½“å‰ç»“ç‚¹ä¸æ˜¯è¿ç®—ç¬¦ï¼Œäºæ˜¯æ ¹æ®endOfNodeä¸­è®°å½•çš„ä½ç½®ä¿¡æ¯å¾—åˆ°å½“å‰ç»“ç‚¹çš„é•¿åº¦ï¼Œå¹¶å¯¹è¯¥ç»“ç‚¹ç»§ç»­è¿›è¡Œåˆ†æ
-			if (*it == ' ')//è‹¥å½“å‰æŒ‡å‘ç©ºæ ¼ï¼Œåˆ™å‘åä¸€ä½ï¼Œé‡æ–°å¼€å§‹åˆ¤å®šè¿‡ç¨‹
+			int endOfNode = -1;//¼ÇÂ¼µ±Ç°½áµãµÄ½áÊøÎ»ÖÃ£¬ÕâÀïÊÇ¼ÙÉèµ±Ç°½áµã²»ÊÇÔËËã·û£¬Òò´ËÈôÆäÊÇÔËËã·û£¬ÔòendOfNode == pos
+			//ÔÚÏÂÃæµÄ¼ì²â¹ı³ÌÖĞ£¬»á²»¶Ïµ÷ÊÔendOfNodeµÄÖµ£¬ÈôÎ´¼ì²âµ½¶ÔÓ¦×Ö·û(´®)£¬ÔòendOfNode»á±£³ÖÔ­Öµ
+			//Èô¼ì²âµ½¶ÔÓ¦×Ö·û(´®)£¬ÇÒÆäÎ»ÖÃ±ÈendOfNode¼ÇÂ¼µÄÎ»ÖÃ¸ü¿¿Ç°£¬ÔòendOfNodeµ÷ÕûÎª¸ÃÎ»ÖÃ
+			//Èô·¢ÏÖÄ³´Î¼ì²âºóendOfNode == pos£¬ÔòËµÃ÷µ±Ç°½áµã¾ÍÊÇ±»¼ì²âµÄ×Ö·û£¬Òò´Ë½«ÆäĞÅÏ¢Ñ¹Èë²ÎÊı½á¹¹²¢ÌøÖÁÏÂÒ»¸ö½áµãµÄÅĞ¶¨
+			//Èç¹ûÈ«²¿¼ì²â¹ıºóÈÔÎ´½øÈëÏÂÒ»¸ö½áµãµÄÅĞ¶¨£¬¾ÍËµÃ÷µ±Ç°½áµã²»ÊÇÔËËã·û£¬ÓÚÊÇ¸ù¾İendOfNodeÖĞ¼ÇÂ¼µÄÎ»ÖÃĞÅÏ¢µÃµ½µ±Ç°½áµãµÄ³¤¶È£¬²¢¶Ô¸Ã½áµã¼ÌĞø½øĞĞ·ÖÎö
+			if (*it == ' ')//Èôµ±Ç°Ö¸Ïò¿Õ¸ñ£¬ÔòÏòºóÒ»Î»£¬ÖØĞÂ¿ªÊ¼ÅĞ¶¨¹ı³Ì
 			{
 				pos++;
 				continue;
 			}
-			//é¦–å…ˆæ£€æµ‹æ¯”è¾ƒè¿ç®—ç¬¦
-			if (SubMin(endOfNode, wholeStr.find(">=", pos)) == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸º>=
+			//Ê×ÏÈ¼ì²â±È½ÏÔËËã·û
+			if (SubMin(endOfNode, wholeStr.find(">=", pos)) == pos && pos != -1)//Èôµ±Ç°½áµãÎª>=
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, greaterEqual, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
-				pos += 2;//ç§»åŠ¨posè·³è¿‡>=ï¼Œè¿›å…¥ä¸‹ä¸€ä¸ªç»“ç‚¹çš„åˆ¤å®š
-				++it;//åŒæ ·ç§»åŠ¨itï¼Œä½†æ˜¯forå¾ªç¯è‡ªå¸¦ä¸€æ¬¡ä½ç§»ï¼Œå› æ­¤åª++
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, greaterEqual, typeInt, std::string()));//Ñ¹Èë½áµã
+				pos += 2;//ÒÆ¶¯posÌø¹ı>=£¬½øÈëÏÂÒ»¸ö½áµãµÄÅĞ¶¨
+				++it;//Í¬ÑùÒÆ¶¯it£¬µ«ÊÇforÑ­»·×Ô´øÒ»´ÎÎ»ÒÆ£¬Òò´ËÖ»++
 				continue;
 			}
-			if (SubMin(endOfNode, wholeStr.find("<=", pos)) == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸º<=
+			if (SubMin(endOfNode, wholeStr.find("<=", pos)) == pos && pos != -1)//Èôµ±Ç°½áµãÎª<=
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, lessEqual, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, lessEqual, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos += 2;
 				++it;
 				continue;
 			}
-			if (SubMin(endOfNode, wholeStr.find_first_of('=', pos)) == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸º=
+			if (SubMin(endOfNode, wholeStr.find_first_of('=', pos)) == pos && pos != -1)//Èôµ±Ç°½áµãÎª=
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, equal, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, equal, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos++;
 				continue;
 			}
-			if (SubMin(endOfNode, wholeStr.find("!=", pos)) == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸º!=
+			if (SubMin(endOfNode, wholeStr.find("!=", pos)) == pos && pos != -1)//Èôµ±Ç°½áµãÎª!=
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, notEqual, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, notEqual, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos += 2;
 				++it;
 				continue;
 			}
-			if (SubMin(endOfNode, wholeStr.find_first_of('>', pos)) == pos && pos != -1)//ä¹‹å‰å·²ç»æ’é™¤>=ï¼Œè‹¥å½“å‰ç»“ç‚¹ä¸º>
+			if (SubMin(endOfNode, wholeStr.find_first_of('>', pos)) == pos && pos != -1)//Ö®Ç°ÒÑ¾­ÅÅ³ı>=£¬Èôµ±Ç°½áµãÎª>
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, greater, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, greater, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos++;
 				continue;
 			}
-			if (SubMin(endOfNode, wholeStr.find_first_of('<', pos)) == pos && pos != -1)//ä¹‹å‰å·²ç»æ’é™¤<=ï¼Œè‹¥å½“å‰ç»“ç‚¹ä¸º<
+			if (SubMin(endOfNode, wholeStr.find_first_of('<', pos)) == pos && pos != -1)//Ö®Ç°ÒÑ¾­ÅÅ³ı<=£¬Èôµ±Ç°½áµãÎª<
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, less, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(compare, oprOr, less, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos++;
 				continue;
 			}
-			//è‹¥æ‰§è¡Œåˆ°æ­¤ä½ç½®ï¼Œåˆ™è¯´æ˜å½“å‰ç»“ç‚¹ä¸æ˜¯æ¯”è¾ƒè¿ç®—ç¬¦ï¼Œäºæ˜¯è¿›å…¥é€»è¾‘è¿ç®—ç¬¦çš„åˆ¤å®š
-			//ç”±äºå¯èƒ½æ¶‰åŠå¤§å°å†™åˆ¤å®šé—®é¢˜ï¼Œæ‰€ä»¥å…ˆæ„é€ ä¸€ä¸ªæ–°çš„å­—ç¬¦ä¸²ï¼Œå°†å…¨éƒ¨å­—æ¯æ”¹ä¸ºå¤§å†™
+			//ÈôÖ´ĞĞµ½´ËÎ»ÖÃ£¬ÔòËµÃ÷µ±Ç°½áµã²»ÊÇ±È½ÏÔËËã·û£¬ÓÚÊÇ½øÈëÂß¼­ÔËËã·ûµÄÅĞ¶¨
+			//ÓÉÓÚ¿ÉÄÜÉæ¼°´óĞ¡Ğ´ÅĞ¶¨ÎÊÌâ£¬ËùÒÔÏÈ¹¹ÔìÒ»¸öĞÂµÄ×Ö·û´®£¬½«È«²¿×ÖÄ¸¸ÄÎª´óĞ´
 			std::string wholeStrUpper(stringToUpper(wholeStr));
 			int andPos1 = wholeStrUpper.find("AND ", pos);
 			int andPos2 = wholeStrUpper.find(" AND ", pos);
-			if (andPos1 == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸ºAND
+			if (andPos1 == pos && pos != -1)//Èôµ±Ç°½áµãÎªAND
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(logic, oprAnd, greater, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(logic, oprAnd, greater, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos += 4;
 				it += 3;
 				continue;
@@ -403,9 +427,9 @@ namespace OOPD
 			SubMin(endOfNode, andPos2);
 			int orPos1 = wholeStrUpper.find("OR ", pos);
 			int orPos2 = wholeStrUpper.find(" OR ", pos);
-			if (orPos1 == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸ºOR
+			if (orPos1 == pos && pos != -1)//Èôµ±Ç°½áµãÎªOR
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(logic, oprOr, greater, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(logic, oprOr, greater, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos += 3;
 				it += 2;
 				continue;
@@ -413,87 +437,87 @@ namespace OOPD
 			SubMin(endOfNode, orPos2);
 			int notPos1 = wholeStrUpper.find("NOT ", pos);
 			int notPos2 = wholeStrUpper.find(" NOT ", pos);
-			//å‡å¦‚æœ‰ä¸€ä¸ªåˆ—åæˆ–å˜é‡åä¸­å«æœ‰NOTï¼Œå¯ä»¥ç¡®å®šï¼šnotPos1 != posï¼Œå› æ­¤å¦‚æœä¸¤è€…ç›¸ç­‰å°±è¯´æ˜å½“å‰ç»“ç‚¹ä¸ºNOT
-			//å¦åˆ™å½“å‰ç»“ç‚¹ä¸ä¸ºNOTï¼Œå³NOTå‰æ–¹ä¸€å®šæœ‰ç©ºæ ¼ï¼Œå°±å¯ä»¥ç”¨ç¬¬äºŒä¸ªnotPos2ç§»åŠ¨endOfNodeä½ç½®
-			if (notPos1 == pos && pos != -1)//è‹¥å½“å‰ç»“ç‚¹ä¸ºNOT
+			//¼ÙÈçÓĞÒ»¸öÁĞÃû»ò±äÁ¿ÃûÖĞº¬ÓĞNOT£¬¿ÉÒÔÈ·¶¨£ºnotPos1 != pos£¬Òò´ËÈç¹ûÁ½ÕßÏàµÈ¾ÍËµÃ÷µ±Ç°½áµãÎªNOT
+			//·ñÔòµ±Ç°½áµã²»ÎªNOT£¬¼´NOTÇ°·½Ò»¶¨ÓĞ¿Õ¸ñ£¬¾Í¿ÉÒÔÓÃµÚ¶ş¸önotPos2ÒÆ¶¯endOfNodeÎ»ÖÃ
+			if (notPos1 == pos && pos != -1)//Èôµ±Ç°½áµãÎªNOT
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(logic, oprNot, greater, typeInt, std::string()));//å‹å…¥ç»“ç‚¹
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(logic, oprNot, greater, typeInt, std::string()));//Ñ¹Èë½áµã
 				pos += 4;
 				it += 3;
 				continue;
 			}
 			SubMin(endOfNode, notPos2);
-			//è‹¥æ‰§è¡Œåˆ°å½“å‰ä½ç½®ï¼Œåˆ™è¯´æ˜å½“å‰ç»“ç‚¹ä¸æ˜¯è¿ç®—ç¬¦ï¼Œéœ€è¦åˆ¤å®šå…¶æ˜¯åˆ—åè¿˜æ˜¯å¸¸é‡
-			//é¦–å…ˆæå–å½“å‰ç»“ç‚¹çš„ä¿¡æ¯
-			int strLen = (endOfNode == -1 ? -1 : endOfNode - pos);//åˆ›å»ºä¸€ä¸ªæ–°çš„å­—ç¬¦ä¸²ï¼Œè‹¥endOfNode == -1ï¼Œåˆ™åº”ç›´æ¥å–åˆ°å…¨é•¿è¡¨è¾¾å¼çš„ç»“å°¾ï¼Œå¦åˆ™å–å‡º
-			//endOfNode - posé•¿åº¦
+			//ÈôÖ´ĞĞµ½µ±Ç°Î»ÖÃ£¬ÔòËµÃ÷µ±Ç°½áµã²»ÊÇÔËËã·û£¬ĞèÒªÅĞ¶¨ÆäÊÇÁĞÃû»¹ÊÇ³£Á¿
+			//Ê×ÏÈÌáÈ¡µ±Ç°½áµãµÄĞÅÏ¢
+			int strLen = (endOfNode == -1 ? -1 : endOfNode - pos);//´´½¨Ò»¸öĞÂµÄ×Ö·û´®£¬ÈôendOfNode == -1£¬ÔòÓ¦Ö±½ÓÈ¡µ½È«³¤±í´ïÊ½µÄ½áÎ²£¬·ñÔòÈ¡³ö
+			//endOfNode - pos³¤¶È
 			std::string thisNode(wholeStr.substr(pos, strLen));
-			while (*thisNode.rbegin() == ' ')//å»é™¤å¯èƒ½çš„å°¾éƒ¨ç©ºæ ¼
+			while (*thisNode.rbegin() == ' ')//È¥³ı¿ÉÄÜµÄÎ²²¿¿Õ¸ñ
 				thisNode.erase(--thisNode.end());
-			if (thisNode[0] == '"')//è‹¥ä»¥å¼•å·å¼€å§‹ï¼Œåˆ™æ˜¯å­—ç¬¦ä¸²å¸¸é‡
+			if (thisNode[0] == '"')//ÈôÒÔÒıºÅ¿ªÊ¼£¬ÔòÊÇ×Ö·û´®³£Á¿
 			{
-				traversalWhere.traversalAttr.push_back(WhereAttrSub2(valConst, oprOr, greater, typeChar, std::string(thisNode.substr(1, thisNode.size() - 2))));//é•¿åº¦-1å»é™¤åéƒ¨å¼•å·
+				traversalWhere.traversalAttr.push_back(WhereAttrSub2(valConst, oprOr, greater, typeChar, std::string(thisNode.substr(1, thisNode.size() - 2))));//³¤¶È-1È¥³ıºó²¿ÒıºÅ
 				pos += strLen;
 				it += (strLen - 1);
 				if (strLen == -1) break;
 				continue;
 			}
-			if ((thisNode[0] >= '0' && thisNode[0] <= '9') || thisNode[0] == '-' || thisNode[0] == '.')//è‹¥ä»¥æ•°å­—æˆ–è´Ÿå·æˆ–å°æ•°ç‚¹å¼€å§‹ï¼Œåˆ™æ˜¯æ•°å­—å¸¸é‡ï¼Œéœ€è¦å†åˆ¤å®šæ˜¯intè¿˜æ˜¯double
+			if ((thisNode[0] >= '0' && thisNode[0] <= '9') || thisNode[0] == '-' || thisNode[0] == '.')//ÈôÒÔÊı×Ö»ò¸ººÅ»òĞ¡Êıµã¿ªÊ¼£¬ÔòÊÇÊı×Ö³£Á¿£¬ĞèÒªÔÙÅĞ¶¨ÊÇint»¹ÊÇdouble
 			{
 				double valDouble = std::stod(thisNode);
 				int valInt = int(valDouble);
-				if (valInt == valDouble)//è‹¥æ²¡æœ‰åˆ‡é™¤ï¼Œåˆ™è®¤ä¸ºæ˜¯int
+				if (valInt == valDouble)//ÈôÃ»ÓĞÇĞ³ı£¬ÔòÈÏÎªÊÇint
 					traversalWhere.traversalAttr.push_back(WhereAttrSub2(valConst, oprOr, greater, typeInt, thisNode));
-				else//è®¤ä¸ºæ˜¯double
+				else//ÈÏÎªÊÇdouble
 					traversalWhere.traversalAttr.push_back(WhereAttrSub2(valConst, oprOr, greater, typeDouble, thisNode));
 				pos += strLen;
 				it += (strLen - 1);
 				if (strLen == -1) break;
 				continue;
 			}
-			//è‹¥æ‰§è¡Œåˆ°æ­¤å¤„ï¼Œåˆ™è¯´æ˜å½“å‰ç»“ç‚¹åªèƒ½æ˜¯åˆ—å
-			DataType colType = target.DataAddress[thisNode].type;;//åˆ¤å®šæ­¤åˆ—çš„æ•°æ®ç±»å‹
+			//ÈôÖ´ĞĞµ½´Ë´¦£¬ÔòËµÃ÷µ±Ç°½áµãÖ»ÄÜÊÇÁĞÃû
+			DataType colType = target.DataAddress[thisNode].type;;//ÅĞ¶¨´ËÁĞµÄÊı¾İÀàĞÍ
 			traversalWhere.traversalAttr.push_back(WhereAttrSub2(valCol, oprOr, greater, colType, thisNode));
 			pos += strLen;
 			it += (strLen - 1);
-			if (strLen == -1) break; //æ¼å†™ä¸€å¥è¯ï¼Œæµªè´¹ä¸€ä¸‹åˆ
+			if (strLen == -1) break; //Â©Ğ´Ò»¾ä»°£¬ÀË·ÑÒ»ÏÂÎç
 		}
-		//traversalWhereçš„åˆ›å»ºå·²ç»å®Œæˆï¼Œä¸‹é¢éœ€è¦åˆ¤å®šæ˜¯å¦ç¬¦åˆä½¿ç”¨searchæ¨¡å¼çš„æ¡ä»¶ï¼Œå³å…¨éƒ¨åˆ—ååªæ¶‰åŠåˆ°ä¸»é”®ä¸”æ¯”è¾ƒè¿ç®—åªæ¶‰åŠåˆ—ä¸å¸¸é‡çš„æ¯”è¾ƒ
-		//éå†traversalWhereä¸­çš„traversalAttræ•°ç»„ä»¥è¿›è¡Œåˆ¤å®š
+		//traversalWhereµÄ´´½¨ÒÑ¾­Íê³É£¬ÏÂÃæĞèÒªÅĞ¶¨ÊÇ·ñ·ûºÏÊ¹ÓÃsearchÄ£Ê½µÄÌõ¼ş£¬¼´È«²¿ÁĞÃûÖ»Éæ¼°µ½Ö÷¼üÇÒ±È½ÏÔËËãÖ»Éæ¼°ÁĞÓë³£Á¿µÄ±È½Ï
+		//±éÀútraversalWhereÖĞµÄtraversalAttrÊı×éÒÔ½øĞĞÅĞ¶¨
 		auto attrEnd = traversalWhere.traversalAttr.end();
 		for (auto attrIt = traversalWhere.traversalAttr.begin(); attrIt != attrEnd; ++attrIt)
 		{
-			if (attrIt->type == valCol)//å¦‚æœæ˜¯åˆ—å
-				if (attrIt->valOrName != target.PrimaryCol)//æ£€æµ‹åˆ—åä¸ä¸»é”®æ˜¯å¦ä¸€è‡´
-					return traversalWhere;//è‹¥ä¸ä¸€è‡´åˆ™ç»“æŸæ£€æµ‹
-			if (attrIt->type == compare)//å¦‚æœæ˜¯æ¯”è¾ƒè¿ç®—ç¬¦
+			if (attrIt->type == valCol)//Èç¹ûÊÇÁĞÃû
+				if (attrIt->valOrName != target.PrimaryCol)//¼ì²âÁĞÃûÓëÖ÷¼üÊÇ·ñÒ»ÖÂ
+					return traversalWhere;//Èô²»Ò»ÖÂÔò½áÊø¼ì²â
+			if (attrIt->type == compare)//Èç¹ûÊÇ±È½ÏÔËËã·û
 			{
 				auto leftVal = attrIt;
 				--leftVal;
 				auto rightVal = attrIt;
 				++rightVal;
-				if (leftVal->type + rightVal->type != valConst + valCol)//æ£€æµ‹ä¸¤ä¾§çš„æ“ä½œæ•°æ˜¯å¦ä¸€ä¸ªæ˜¯å¸¸é‡ä¸€ä¸ªæ˜¯åˆ—å
-					return traversalWhere;//è‹¥ä¸ä¸€è‡´åˆ™ç»“æŸæ£€æµ‹
+				if (leftVal->type + rightVal->type != valConst + valCol)//¼ì²âÁ½²àµÄ²Ù×÷ÊıÊÇ·ñÒ»¸öÊÇ³£Á¿Ò»¸öÊÇÁĞÃû
+					return traversalWhere;//Èô²»Ò»ÖÂÔò½áÊø¼ì²â
 			}
 		}
-		//è‹¥æ‰§è¡Œåˆ°æ­¤å¤„ï¼Œåˆ™è¯´æ˜å¯ä»¥ä½¿ç”¨searchæ¨¡å¼ï¼Œéœ€è¦é‡æ–°æ„é€ å‚æ•°ç»“æ„
+		//ÈôÖ´ĞĞµ½´Ë´¦£¬ÔòËµÃ÷¿ÉÒÔÊ¹ÓÃsearchÄ£Ê½£¬ĞèÒªÖØĞÂ¹¹Ôì²ÎÊı½á¹¹
 		WhereAttr searchWhere(search, std::vector<WhereAttrSub1>(), std::vector<WhereAttr::node>(), std::vector<WhereAttrSub2>());
-		int comparePos = 0;//ç”¨äºè®°å½•è¡¨ç¤ºæ¯”è¾ƒè¿ç®—çš„ç»“ç‚¹å·²ç»å‹å…¥åˆ°å“ªä¸ªä¸‹æ ‡å¤„
-		for (auto attrIt = traversalWhere.traversalAttr.begin(); attrIt != attrEnd; ++attrIt)//éå†traversalWhere
+		int comparePos = 0;//ÓÃÓÚ¼ÇÂ¼±íÊ¾±È½ÏÔËËãµÄ½áµãÒÑ¾­Ñ¹Èëµ½ÄÄ¸öÏÂ±ê´¦
+		for (auto attrIt = traversalWhere.traversalAttr.begin(); attrIt != attrEnd; ++attrIt)//±éÀútraversalWhere
 		{
-			if (attrIt->type == logic)//å¦‚æœæ˜¯é€»è¾‘è¿ç®—ç¬¦ï¼Œåˆ™ç›´æ¥å‹å…¥
+			if (attrIt->type == logic)//Èç¹ûÊÇÂß¼­ÔËËã·û£¬ÔòÖ±½ÓÑ¹Èë
 				searchWhere.searchAttr.push_back(WhereAttr::node(logic, attrIt->logicType, 0));
-			if (attrIt->type == compare)//å¦‚æœæ˜¯æ¯”è¾ƒè¿ç®—ç¬¦ï¼Œéœ€è¦æå–æ•´ä¸ªæ¯”è¾ƒè¿ç®—çš„ä¿¡æ¯å¹¶å‹å…¥
+			if (attrIt->type == compare)//Èç¹ûÊÇ±È½ÏÔËËã·û£¬ĞèÒªÌáÈ¡Õû¸ö±È½ÏÔËËãµÄĞÅÏ¢²¢Ñ¹Èë
 			{
-				auto constVal = attrIt;//æŒ‡å‘æ¯”è¾ƒè¿ç®—ä¸­çš„å¸¸é‡
+				auto constVal = attrIt;//Ö¸Ïò±È½ÏÔËËãÖĞµÄ³£Á¿
 				++constVal;
-				auto colVal = attrIt;//æŒ‡å‘æ¯”è¾ƒè¿ç®—ä¸­çš„åˆ—å
-				--colVal;//é»˜è®¤åˆ—åä½äºè¿ç®—ç¬¦å·¦ä¾§
-				if (colVal->type == valConst)//è‹¥åˆ—åä½äºè¿ç®—ç¬¦å³ä¾§
+				auto colVal = attrIt;//Ö¸Ïò±È½ÏÔËËãÖĞµÄÁĞÃû
+				--colVal;//Ä¬ÈÏÁĞÃûÎ»ÓÚÔËËã·û×ó²à
+				if (colVal->type == valConst)//ÈôÁĞÃûÎ»ÓÚÔËËã·ûÓÒ²à
 				{
 					constVal += 2;
 					colVal -= 2;
-					//å¤„ç†æ¯”è¾ƒè¿ç®—ç¬¦åˆ°åˆç†çš„æ–¹å‘
+					//´¦Àí±È½ÏÔËËã·ûµ½ºÏÀíµÄ·½Ïò
 					switch (attrIt->compareType)
 					{
 						case greater: attrIt->compareType = less; break;
@@ -503,10 +527,10 @@ namespace OOPD
 						default: break;
 					}
 				}
-				//å‹å…¥ä¿¡æ¯ï¼Œé¦–å…ˆå°†æ¯”è¾ƒè¿ç®—çš„ä¿¡æ¯å‹å…¥searchCompareæ•°ç»„ï¼Œç„¶åå°†æŒ‡å‘æ­¤å¤„çš„ä¿¡æ¯å‹å…¥searchAttræ•°ç»„
+				//Ñ¹ÈëĞÅÏ¢£¬Ê×ÏÈ½«±È½ÏÔËËãµÄĞÅÏ¢Ñ¹ÈësearchCompareÊı×é£¬È»ºó½«Ö¸Ïò´Ë´¦µÄĞÅÏ¢Ñ¹ÈësearchAttrÊı×é
 				searchWhere.searchCompare.push_back(WhereAttrSub1(colVal->valOrName, attrIt->compareType, target.DataAddress[colVal->valOrName].type, constVal->valOrName));
 				searchWhere.searchAttr.push_back(WhereAttr::node(clause, oprAnd, comparePos));
-				++comparePos;//ä¸‹æ ‡åŠ ä¸€
+				++comparePos;//ÏÂ±ê¼ÓÒ»
 			}
 		}
 		return searchWhere;
