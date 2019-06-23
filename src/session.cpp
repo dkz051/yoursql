@@ -170,7 +170,7 @@ namespace OOPD
 						attrName.push_back(str[i] + "(" + str[i + 2] + ")");
 						if (str[i + 2] != "*")
 							group.push_back((group_t){str[i + 2], str[i]});
-						i += 4;
+						i += 5;
 						aggregate = true;
 					}
 					else

@@ -1,0 +1,10 @@
+COUNT(calculus)	AVG(calculus)	MIN(calculus)	MAX(calculus)	STDDEV(calculus)
+19	59.0000	0	97	29.470770532673107
+COUNT(algebra)	AVG(algebra)	MIN(algebra)	MAX(algebra)	STDDEV(algebra)
+21	64.5238	3	100	24.435764280327287
+COUNT(oop)	AVG(oop)	MIN(oop)	MAX(oop)	STDDEV(oop)
+18	59.3333	18	98	23.426006441085466
+COUNT(*)
+25
+SUM(calculus)	SUM(algebra)	SUM(oop)
+1121	1355	1068

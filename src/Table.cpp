@@ -270,7 +270,10 @@ namespace OOPD
 						sum += vInt;
 						sum2 += vInt * vInt;
 						if (!flag)
+						{
 							intE = vInt;
+							flag = true;
+						}
 						else
 						{
 							if (function == "MAX") intE = std::max(intE, vInt);
@@ -285,7 +288,10 @@ namespace OOPD
 						sum += vDbl;
 						sum2 += vDbl * vDbl;
 						if (!flag)
+						{
 							dblE = vDbl;
+							flag = true;
+						}
 						else
 						{
 							if (function == "MAX") dblE = std::max(dblE, vDbl);
@@ -298,7 +304,10 @@ namespace OOPD
 						if (vChar == "NULL") // is null
 							continue;
 						if (!flag)
+						{
 							strE = vChar;
+							flag = true;
+						}
 						else
 						{
 							if (function == "MAX") strE = std::max(strE, vChar);
@@ -314,19 +323,25 @@ namespace OOPD
 					else if (type == typeDouble) ans.valDouble[id] = count ? dblE : 0x3f3f3f;
 					else if (type == typeChar) ans.valString[id] = count ? strE : "NULL";
 				}
-				else if (function == "AVG" || function == "SUM")
+				else if (function == "AVG")
 				{
-					if (type != typeDouble) throw "Calculate: Type Error";
-					ans.valDouble[id] = (function == "SUM" ? sum : (count ? sum / count : 0x3f3f3f));
+					if (type != typeDouble) throw "Aggregate: Type Error";
+					ans.valDouble[id] = (count ? sum / count : 0x3f3f3f);
+				}
+				else if (function == "SUM")
+				{
+					if (type == typeInt) ans.valInt[id] = count ? sum : 0x3f3f3f;
+					else if (type == typeDouble) ans.valDouble[id] = count ? sum : 0x3f3f3f;
+					else throw "Aggregate: Type Error";
 				}
 				else if (function == "COUNT")
 				{
-					if (type != typeInt) throw "Calculate: Type Error";
+					if (type != typeInt) throw "Aggregate: Type Error";
 					ans.valInt[id] = count;
 				}
 				else if (function == "STDDEV")
 				{
-					if (type != typeDouble) throw "Calculate: Type Error";
+					if (type != typeDouble) throw "Aggregate: Type Error";
 					ans.valDouble[id] = count ? sqrt(sum2 / count - pow(sum / count, 2.0)) : 0x3f3f3f;
 				}
 			}

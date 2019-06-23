@@ -4,10 +4,10 @@ rm report.txt -f
 
 echo "YourSQL Automated Challenge - $(date +%c)" >>report.txt
 
-for i in {1..23}
+for i in {1..25}
 do
 	echo "Case #$i: Running"
-	timeout 30s ./main <$i.sql >$i.ans
+	timeout 10s ./main <$i.sql >$i.ans
 	code=$?
 	if [ $code -eq 124 ] ; then
 		echo "Case #$i: Time Limit Exceeded" >>report.txt
