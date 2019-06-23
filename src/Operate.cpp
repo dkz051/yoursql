@@ -124,9 +124,9 @@ namespace OOPD
 		{
 			switch (AddIt->second.type)
 			{
-				case typeInt: newData->valInt.push_back(0x3f3f3f); break;
-				case typeDouble: newData->valDouble.push_back(0x3f3f3f); break;
-				case typeChar: newData->valString.push_back("NULL"); break;
+				case typeInt: /*newData->valInt.push_back(0x3f3f3f);*/ newData->values.push_back(YourSqlData(new DataInt())); break;
+				case typeDouble: /*newData->valDouble.push_back(0x3f3f3f);*/ newData->values.push_back(YourSqlData(new DataDouble())); break;
+				case typeChar: /*newData->valString.push_back("NULL");*/ newData->values.push_back(YourSqlData(new DataString())); break;
 			}
 		}
 		//然后初始化值
@@ -134,22 +134,25 @@ namespace OOPD
 		for (auto it = attr.begin(); it != end; ++it)//对于每一列
 		{
 			const DataAddressType& info = target.DataAddress[it->colName];
-			switch (info.type)
+			if (it->val == "NULL") continue;
+		/*	switch (info.type)
 			{
 				case typeInt: newData->valInt[info.pos] = it->val == "NULL" ? 0x3f3f3f : SubStringToNum<int>(it->val); break;
 				case typeDouble: newData->valDouble[info.pos] = it->val == "NULL" ? 0x3f3f3f : SubStringToNum<double>(it->val); break;
 				case typeChar: newData->valString[info.pos] = std::move(it->val); break;
-			}
+			}*/
+			newData->values[info.pos] = YourSqlData(data_t::fromRaw(it->val));
 		}
 		//调用底层接口
 		bool result;
 		DataAddressType& keyInfo = target.DataAddress[target.PrimaryCol];
-		switch (keyInfo.type)
+		/*switch (keyInfo.type)
 		{
 			case typeInt: result = target.GetTreeInt(TableCreateAttr(target.PrimaryCol, typeInt))->Insert(newData->valInt[keyInfo.pos], newData); break;
 			case typeDouble: result = target.GetTreeDouble(TableCreateAttr(target.PrimaryCol, typeDouble))->Insert(newData->valDouble[keyInfo.pos], newData); break;
 			case typeChar: result = target.GetTreeChar(TableCreateAttr(target.PrimaryCol, typeChar))->Insert(newData->valString[keyInfo.pos], newData); break;
-		}
+		}*/
+		result = target.GetTree(TableCreateAttr(target.PrimaryCol, keyInfo.type))->Insert(newData->values[keyInfo.pos], newData);
 		return result;
 	}
 
@@ -168,12 +171,13 @@ namespace OOPD
 			std::cerr << "Deleting record #" << ++recordID << "/" << range.size() << '\n';
 #endif
 			bool result;
-			switch (info.type)//调用主键树的删除接口，传入本行Data的主键值
+		/*	switch (info.type)//调用主键树的删除接口，传入本行Data的主键值
 			{
 				case typeInt: result = target.GetTreeInt(TableCreateAttr(target.PrimaryCol, typeInt))->Delete((*it)->valInt[info.pos]); break;
 				case typeDouble: result = target.GetTreeDouble(TableCreateAttr(target.PrimaryCol, typeDouble))->Delete((*it)->valDouble[info.pos]); break;
 				case typeChar: result = target.GetTreeChar(TableCreateAttr(target.PrimaryCol, typeChar))->Delete((*it)->valString[info.pos]); break;
-			}
+			}*/
+			result = target.GetTree(TableCreateAttr(target.PrimaryCol, info.type))->Delete((*it)->values[info.pos]);
 			if (result == false)//如果删除失败
 				return false;
 			delete *it;//delete本行Data
@@ -195,7 +199,7 @@ namespace OOPD
 				bool result = true;
 				if (attrIt->colName == target.PrimaryCol)//如果修改的是主键，需要调用底层接口来调整索引
 				{
-					switch (info.type)
+				/*	switch (info.type)
 					{
 						case typeInt:
 						{
@@ -221,21 +225,25 @@ namespace OOPD
 							result = target.CharTreeList[attrIt->colName]->Update(tmpOld, tmpNew);
 							break;
 						}
-					}
+					}*/
+					YourSqlData tmpOld((*it)->values[info.pos]);//记录旧数据
+					YourSqlData tmpNew(YourSqlData(data_t::fromRaw(attrIt->val)));//从传入参数中解析出新数据
+					(*it)->values[info.pos] = tmpNew;
+					result = target.TreeList[attrIt->colName]->Update(tmpOld, tmpNew);
 				}
 				else//如果修改的不是主键，就只需要修改值
 				{
-					switch (info.type)
+				/*	switch (info.type)
 					{
 						case typeInt: (*it)->valInt[info.pos] = SubStringToNum<int>(attrIt->val); break;
 						case typeDouble: (*it)->valDouble[info.pos] = SubStringToNum<double>(attrIt->val); break;
 						case typeChar: (*it)->valString[info.pos] = attrIt->val; break;
-					}
+					}*/
+					(*it)->values[info.pos] = YourSqlData(data_t::fromRaw(attrIt->val));
 				}
 				if (result == false)
 					return false;
 			}
-
 		}
 		return true;
 	}
@@ -303,7 +311,7 @@ namespace OOPD
 						auto rightIt = attrIt;
 						++rightIt;
 						DataType type = leftIt->valType;//获得操作数的数据类型
-						switch (type)//根据数据类型分类
+					/*	switch (type)//根据数据类型分类
 						{
 							case typeInt://数据类型为int
 							{
@@ -362,7 +370,26 @@ namespace OOPD
 									comResult.push_back(SubCompare(*leftVal, *rightVal, *attrIt));
 								break;
 							}
-						}//完成一个比较运算符
+						}//完成一个比较运算符*/
+						YourSqlData leftVal;
+						YourSqlData rightVal;
+						if (leftIt->type == valConst)//如果是常量
+							leftVal = YourSqlData(data_t::fromRaw(leftIt->valOrName));
+						else//如果是列名
+							leftVal = YourSqlData((*it)->values[target.DataAddress[leftIt->valOrName].pos]);
+						if (rightIt->type == valConst)//如果是常量
+							rightVal = YourSqlData(data_t::fromRaw(rightIt->valOrName));
+						else//如果是列名
+							rightVal = YourSqlData((*it)->values[target.DataAddress[rightIt->valOrName].pos]);
+						if (leftVal.isNull() || rightVal.isNull())
+							comResult.push_back(false);
+						else
+							comResult.push_back(SubCompare(leftVal, rightVal, *attrIt));
+						////判定是否为null
+						//if (leftVal == 0x3f3f3f || rightVal == 0x3f3f3f)
+						//	comResult.push_back(false);
+						//else
+						//comResult.push_back(SubCompare(leftVal, rightVal, *attrIt));
 					}
 				//完成全部比较运算符，下面开始处理逻辑运算符and or not
 				while (true)//每次循环找到当前优先级最高的逻辑运算符
@@ -457,12 +484,13 @@ namespace OOPD
 							WhereAttrSub1* com1 = &(attr.searchCompare[it->pos]);//构造新变量避免反复查找
 							WhereAttrSub1* com2 = &(attr.searchCompare[it2->pos]);
 							bool com1LessCom2;//确保com1中的常量更小
-							switch (com1->type)
+						/*	switch (com1->type)
 							{
 								case typeInt: com1LessCom2 = SubStringToNum<int>(com1->val) < SubStringToNum<int>(com2->val); break;
 								case typeDouble: com1LessCom2 = SubStringToNum<double>(com1->val) < SubStringToNum<double>(com2->val); break;
 								case typeChar: com1LessCom2 = com1->val < com2->val; break;
-							}
+							}*/
+							com1LessCom2 = YourSqlData(data_t::fromRaw(com1->val)) < YourSqlData(data_t::fromRaw(com2->val));
 							if (!com1LessCom2)
 							{
 								auto tmp = com1;
@@ -477,21 +505,23 @@ namespace OOPD
 								std::vector<Data*> midResult;//保存中间的结果
 								bool leftClose = com1->compareType == greaterEqual ? true : false;//若为大于等于则左侧闭，否则左侧均为开
 								bool rightClose = com2->compareType == lessEqual ? true : false;
-								switch (com1->type)
+							/*	switch (com1->type)
 								{
 									case typeInt: midResult = target.IntTreeList[com1->colName]->BatchSearch(SubStringToNum<int>(com1->val), SubStringToNum<int>(com2->val), leftClose, rightClose); break;
 									case typeDouble: midResult = target.DoubleTreeList[com1->colName]->BatchSearch(SubStringToNum<double>(com1->val), SubStringToNum<double>(com2->val), leftClose, rightClose); break;
 									case typeChar: midResult = target.CharTreeList[com1->colName]->BatchSearch(com1->val, com2->val, leftClose, rightClose); break;
-								}
+								}*/
+								midResult = target.TreeList[com1->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com1->val)), YourSqlData(data_t::fromRaw(com2->val)), leftClose, rightClose);
 								if (com1->compareType == notEqual)//如果左侧还有区间
 								{
 									std::vector<Data*> tmpResult;
-									switch (com1->type)
+								/*	switch (com1->type)
 									{
 										case typeInt: tmpResult = target.IntTreeList[com1->colName]->BatchSearch(SubStringToNum<int>(com1->val), false, false); break;
 										case typeDouble: tmpResult = target.DoubleTreeList[com1->colName]->BatchSearch(SubStringToNum<double>(com1->val), false, false); break;
 										case typeChar: tmpResult = target.CharTreeList[com1->colName]->BatchSearch(com1->val, false, false); break;
-									}
+									}*/
+									tmpResult = target.TreeList[com1->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com1->val)), false, false);
 									std::vector<Data*> afterUnion;
 									SubUnion(midResult, tmpResult, afterUnion);
 									midResult = std::move(afterUnion);
@@ -499,12 +529,13 @@ namespace OOPD
 								if (com2->compareType == notEqual)//如果右侧还有区间
 								{
 									std::vector<Data*> tmpResult;
-									switch (com2->type)
+								/*	switch (com2->type)
 									{
 										case typeInt: tmpResult = target.IntTreeList[com2->colName]->BatchSearch(SubStringToNum<int>(com2->val), false, true); break;
 										case typeDouble: tmpResult = target.DoubleTreeList[com2->colName]->BatchSearch(SubStringToNum<double>(com2->val), false, true); break;
 										case typeChar: tmpResult = target.CharTreeList[com2->colName]->BatchSearch(com2->val, false, true); break;
-									}
+									}*/
+									tmpResult = target.TreeList[com2->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com2->val)), false, true);
 									std::vector<Data*> afterUnion;
 									SubUnion(midResult, tmpResult, afterUnion);
 									midResult = std::move(afterUnion);
@@ -516,22 +547,24 @@ namespace OOPD
 							{
 								if (com1->compareType == equal)//首先处理等于的情况
 								{
-									switch (com1->type)
+								/*	switch (com1->type)
 									{
 										case typeInt: compareResult = target.IntTreeList[com1->colName]->BatchSearch(SubStringToNum<int>(com1->val), SubStringToNum<int>(com1->val), true, true); break;
 										case typeDouble: compareResult = target.DoubleTreeList[com1->colName]->BatchSearch(SubStringToNum<double>(com1->val), SubStringToNum<double>(com1->val), true, true); break;
 										case typeChar: compareResult = target.CharTreeList[com1->colName]->BatchSearch(com1->val, com1->val, true, true); break;
-									}
+									}*/
+									compareResult = target.TreeList[com1->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com1->val)), YourSqlData(data_t::fromRaw(com1->val)), true, true);
 								}
 								else//不是等于的情况
 								{
 									bool leftClose = com1->compareType == lessEqual ? true : false;//若为小于等于，则为闭区间
-									switch (com1->type)
+									/*switch (com1->type)
 									{
 										case typeInt: compareResult = target.IntTreeList[com1->colName]->BatchSearch(SubStringToNum<int>(com1->val), leftClose, false); break;
 										case typeDouble: compareResult = target.DoubleTreeList[com1->colName]->BatchSearch(SubStringToNum<double>(com1->val), leftClose, false); break;
 										case typeChar: compareResult = target.CharTreeList[com1->colName]->BatchSearch(com1->val, leftClose, false); break;
-									}
+									}*/
+									compareResult = target.TreeList[com1->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com1->val)), leftClose, false);
 								}
 							}
 							//如果中间和左侧都没有共同区间，但是右侧有共同区间，由于上面已经排除了左结点不向右的情况，所以只考虑右结点不能向左的情况
@@ -539,22 +572,24 @@ namespace OOPD
 							{
 								if (com2->compareType == equal)//首先处理等于
 								{
-									switch (com2->type)
+								/*	switch (com2->type)
 									{
 										case typeInt: compareResult = target.IntTreeList[com2->colName]->BatchSearch(SubStringToNum<int>(com2->val), SubStringToNum<int>(com2->val), true, true); break;
 										case typeDouble: compareResult = target.DoubleTreeList[com2->colName]->BatchSearch(SubStringToNum<double>(com2->val), SubStringToNum<double>(com2->val), true, true); break;
 										case typeChar: compareResult = target.CharTreeList[com2->colName]->BatchSearch(com2->val, com2->val, true, true); break;
-									}
+									}*/
+									compareResult = target.TreeList[com2->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com2->val)), YourSqlData(data_t::fromRaw(com2->val)), true, true);
 								}
 								else
 								{
 									bool rightClose = com2->compareType == greaterEqual ? true : false;
-									switch (com2->type)
+								/*	switch (com2->type)
 									{
 										case typeInt: compareResult = target.IntTreeList[com2->colName]->BatchSearch(SubStringToNum<int>(com2->val), rightClose, true); break;
 										case typeDouble: compareResult = target.DoubleTreeList[com2->colName]->BatchSearch(SubStringToNum<double>(com2->val), rightClose, true); break;
 										case typeChar: compareResult = target.CharTreeList[com2->colName]->BatchSearch(com2->val, rightClose, true); break;
-									}
+									}*/
+									compareResult = target.TreeList[com2->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com2->val)), rightClose, true);
 								}
 							}
 							//没有共同区间
@@ -571,64 +606,71 @@ namespace OOPD
 					{
 						case greater:
 						{
-							switch (com->type)
+						/*	switch (com->type)
 							{
 								case typeInt: compareResult = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), false, true); break;
 								case typeDouble: compareResult = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), false, true); break;
 								case typeChar: compareResult = target.CharTreeList[com->colName]->BatchSearch(com->val, false, true); break;
-							}
+							}*/
+							compareResult = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), false, true);
 							break;
 						}
 						case less:
 						{
-							switch (com->type)
+						/*	switch (com->type)
 							{
 								case typeInt: compareResult = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), false, false); break;
 								case typeDouble: compareResult = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), false, false); break;
 								case typeChar: compareResult = target.CharTreeList[com->colName]->BatchSearch(com->val, false, false); break;
-							}
+							}*/
+							compareResult = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), false, false);
 							break;
 						}
 						case greaterEqual:
 						{
-							switch (com->type)
+						/*	switch (com->type)
 							{
 								case typeInt: compareResult = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), true, true); break;
 								case typeDouble: compareResult = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), true, true); break;
 								case typeChar: compareResult = target.CharTreeList[com->colName]->BatchSearch(com->val, true, true); break;
-							}
+							}*/
+							compareResult = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), true, true);
 							break;
 						}
 						case lessEqual:
 						{
-							switch (com->type)
+						/*	switch (com->type)
 							{
 								case typeInt: compareResult = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), true, false); break;
 								case typeDouble: compareResult = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), true, false); break;
 								case typeChar: compareResult = target.CharTreeList[com->colName]->BatchSearch(com->val, true, false); break;
-							}
+							}*/
+							compareResult = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), true, false);
 							break;
 						}
 						case equal:
 						{
-							switch (com->type)
+						/*	switch (com->type)
 							{
 								case typeInt: compareResult = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), SubStringToNum<int>(com->val), true, true); break;
 								case typeDouble: compareResult = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), SubStringToNum<double>(com->val), true, true); break;
 								case typeChar: compareResult = target.CharTreeList[com->colName]->BatchSearch(com->val, com->val, true, true); break;
-							}
+							}*/
+							compareResult = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), YourSqlData(data_t::fromRaw(com->val)), true, true);
 							break;
 						}
 						case notEqual:
 						{
 							std::vector<Data*> tmpResult1;
 							std::vector<Data*> tmpResult2;
-							switch (com->type)//先分别得到两边
+						/*	switch (com->type)//先分别得到两边
 							{
 								case typeInt: tmpResult1 = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), false, true); tmpResult2 = target.IntTreeList[com->colName]->BatchSearch(SubStringToNum<int>(com->val), false, false); break;
 								case typeDouble: tmpResult1 = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), false, true); tmpResult2 = target.DoubleTreeList[com->colName]->BatchSearch(SubStringToNum<double>(com->val), false, false); break;
 								case typeChar: tmpResult1 = target.CharTreeList[com->colName]->BatchSearch(com->val, false, true); tmpResult2 = target.CharTreeList[com->colName]->BatchSearch(com->val, false, false); break;
-							}
+							}*/
+							tmpResult1 = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), false, true);
+							tmpResult2 = target.TreeList[com->colName]->BatchSearch(YourSqlData(data_t::fromRaw(com->val)), false, false);
 							SubUnion(tmpResult1, tmpResult2, compareResult);//再取并集
 							break;
 						}
@@ -681,7 +723,7 @@ namespace OOPD
 			//当前表达式中全部逻辑运算符均运算完毕，result中只有一个结点，即结果
 			auto finalEnd = result.begin()->end();
 			//清理主键为NULL的数据
-			switch (target.DataAddress[target.PrimaryCol].type)
+		/*	switch (target.DataAddress[target.PrimaryCol].type)
 			{
 				case typeInt:
 				{
@@ -704,7 +746,10 @@ namespace OOPD
 							result.begin()->erase(finalIt);
 					break;
 				}
-			}
+			}*/
+			for (auto finalIt = result.begin()->begin(); finalIt != finalEnd; ++finalIt)
+				if ((*finalIt)->values[target.DataAddress[target.PrimaryCol].pos].isNull())
+					result.begin()->erase(finalIt);
 			return *(result.begin());
 		}
 	}
@@ -800,22 +845,24 @@ namespace OOPD
 	//返回给定Table的全部Data
 	std::vector<Data*> Operate::SubGetAllData(Table& target)
 	{
-		switch (target.DataAddress[target.PrimaryCol].type)
+	/*	switch (target.DataAddress[target.PrimaryCol].type)
 		{
 			case typeInt: return target.IntTreeList[target.PrimaryCol]->GetData(); break;
 			case typeDouble: return target.DoubleTreeList[target.PrimaryCol]->GetData(); break;
 			case typeChar: return target.CharTreeList[target.PrimaryCol]->GetData(); break;
-		}
+		}*/
+		return target.TreeList[target.PrimaryCol]->GetData();
 	}
 
 	//在DataShow中调用，用于对得到的Data*数组排序，依据是key值大小
 	bool SubDataShowCom::operator()(const Data* left, const Data* right)
 	{
-		switch (mode)//根据数据类型分别处理
+	/*	switch (mode)//根据数据类型分别处理
 		{
 			case 1: return left->valInt[pos] < right->valInt[pos]; break;
 			case 2: return left->valDouble[pos] < right->valDouble[pos]; break;
 			case 3: return left->valString[pos] < right->valString[pos]; break;
-		}
+		}*/
+		return left->values[pos] < right->values[pos];
 	}
 }

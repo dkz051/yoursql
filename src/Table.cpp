@@ -9,18 +9,20 @@ namespace OOPD
 {
 	Table::Table(std::vector<TableCreateAttr> & KeyInfo, std::vector<TableCreateAttr> & ColInfo, const int tree_rank, const int type_num) : TreeRank(tree_rank), TypeNum(type_num)
 	{
-		int *pos = new int[TypeNum];
-		for (int i = 0; i < TypeNum; ++i)
-			pos[i] = 0;
+	//	int *pos = new int[TypeNum];
+	//	for (int i = 0; i < TypeNum; ++i)
+	//		pos[i] = 0;
+		int columns = 0;
 		for (auto it = ColInfo.begin(); it != ColInfo.end(); ++it)
 		{
-			DataAddress.insert(std::pair<std::string, DataAddressType>(it->colName, {it->type, pos[it->type]++, it->NotNull}));
+	//		DataAddress.insert(std::pair<std::string, DataAddressType>(it->colName, {it->type, pos[it->type]++, it->NotNull}));
+			DataAddress[it->colName] = (DataAddressType){it->type, columns++, it->NotNull};
 			if (it->Primary) PrimaryCol = it->colName;
 			columnNames.push_back(it->colName);
 		}
 		for (auto it = KeyInfo.begin(); it != KeyInfo.end(); ++it)
 		{
-			switch (it->type)
+		/*	switch (it->type)
 			{
 				case typeInt:
 					IntTreeList.insert(std::pair<std::string, BPTree<int>*>(it->colName, new BPTree<int>(TreeRank)));
@@ -31,30 +33,35 @@ namespace OOPD
 				case typeChar:
 					CharTreeList.insert(std::pair<std::string, BPTree<std::string>*>(it->colName, new BPTree<std::string>(TreeRank)));
 					break;
-			}
+			}*/
+			TreeList[it->colName] = new BPTree<YourSqlData>(TreeRank);
 		}
-		delete [] pos;
+		//delete [] pos;
 	}
 	//初始化表以及表中的索引树
 
 	Table::~Table()
 	{
 		std::vector<Data*> data;
-		if (!IntTreeList.empty()) data = IntTreeList.begin()->second->GetData();
-		else if (!DoubleTreeList.empty()) data = DoubleTreeList.begin()->second->GetData();
-		else if (!CharTreeList.empty()) data = CharTreeList.begin()->second->GetData();
+	//	if (!IntTreeList.empty()) data = IntTreeList.begin()->second->GetData();
+	//	else if (!DoubleTreeList.empty()) data = DoubleTreeList.begin()->second->GetData();
+	//	else if (!CharTreeList.empty()) data = CharTreeList.begin()->second->GetData();
+		if (!TreeList.empty()) data = TreeList.begin()->second->GetData();
 		else return;
 		for (auto it = data.begin(); it != data.end(); ++it)
 			delete *it;
-		for (auto it = IntTreeList.begin(); it != IntTreeList.end(); ++it)
+	//	for (auto it = IntTreeList.begin(); it != IntTreeList.end(); ++it)
+	//		delete it->second;
+	//	for (auto it = DoubleTreeList.begin(); it != DoubleTreeList.end(); ++it)
+	//		delete it->second;
+	//	for (auto it = CharTreeList.begin(); it != CharTreeList.end(); ++it)
+	//		delete it->second;
+		for (auto it = TreeList.begin(); it != TreeList.end(); ++it)
 			delete it->second;
-		for (auto it = DoubleTreeList.begin(); it != DoubleTreeList.end(); ++it)
-			delete it->second;
-		for (auto it = CharTreeList.begin(); it != CharTreeList.end(); ++it)
-			delete it->second;
-		IntTreeList.clear();
-		DoubleTreeList.clear();
-		CharTreeList.clear();
+	//	IntTreeList.clear();
+	//	DoubleTreeList.clear();
+	//	CharTreeList.clear();
+		TreeList.clear();
 		DataAddress.clear();
 	}
 	//析构表
@@ -99,7 +106,7 @@ namespace OOPD
 
 				if (colIt != fields.begin()) o << '\t';
 
-				switch (info.type)
+			/*	switch (info.type)
 				{
 					case typeInt:
 						if (it->valInt[info.pos] == 0x3f3f3f) {o << "NULL"; break;}
@@ -108,7 +115,8 @@ namespace OOPD
 						if (int(it->valDouble[info.pos]) == 0x3f3f3f) {o << "NULL"; break;}
 						else {o << std::fixed << std::setprecision(4) << it->valDouble[info.pos]; break;}
 					case typeChar: o << it->valString[info.pos]; break;
-				}
+				}*/
+				o << it->values[info.pos];
 			}
 			o << std::endl;
 		}
@@ -123,8 +131,7 @@ namespace OOPD
 				for (auto iter = order.begin(); iter != order.end(); ++iter)
 				{
 					int id = DataAddress[iter->field].pos;
-					bool val = iter->sort == OOPD::sort_t::ascending ? false : true;
-					switch (DataAddress[iter->field].type)
+				/*	switch (DataAddress[iter->field].type)
 					{
 						case typeInt:
 						{
@@ -144,6 +151,21 @@ namespace OOPD
 								return val ^ (a.valString[id] < b.valString[id]);
 							break;
 						}
+					}*/
+
+					if (iter->sort == sort_t::ascending)
+					{
+						if (a.values[id].isNull() && b.values[id].isNull()) continue;
+						if (a.values[id].isNull()) return true;
+						if (b.values[id].isNull()) return false;
+						if (a.values[id] != b.values[id]) return a.values[id] < b.values[id];
+					}
+					else
+					{
+						if (a.values[id].isNull() && b.values[id].isNull()) continue;
+						if (b.values[id].isNull()) return true;
+						if (a.values[id].isNull()) return false;
+						if (a.values[id] != b.values[id]) return a.values[id] > b.values[id];
 					}
 				}
 				return false;
@@ -166,7 +188,7 @@ namespace OOPD
 			for (auto iter = fields.begin(); iter != fields.end(); ++iter)
 			{
 				int id = DataAddress[*iter].pos;
-				switch (DataAddress[*iter].type)
+			/*	switch (DataAddress[*iter].type)
 				{
 					case typeInt:
 					{
@@ -186,16 +208,20 @@ namespace OOPD
 							return false;
 						break;
 					}
-				}
+				}*/
+				if (a.values[id] != b.values[id])
+					return false;
 			}
 			return true;
 		};
 
-		const int TypeNum = 3;
+	//	const int TypeNum = 3;
 
-		int *pos = new int[TypeNum];
-		for (int i = 0; i < TypeNum; ++i)
-			pos[i] = 0;
+	//	int *pos = new int[TypeNum];
+	//	for (int i = 0; i < TypeNum; ++i)
+	//		pos[i] = 0;
+
+		int columns = 0;
 
 		// 创建临时表
 		TemporaryTable result;
@@ -203,7 +229,8 @@ namespace OOPD
 		for (auto iter = fields.begin(); iter != fields.end(); ++iter)
 		{
 			result.columnNames.push_back(*iter);
-			result.DataAddress.insert(std::pair<std::string, DataAddressType>(*iter, {DataAddress[*iter].type, pos[DataAddress[*iter].type]++, DataAddress[*iter].notNull}));
+		//	result.DataAddress.insert(std::pair<std::string, DataAddressType>(*iter, {DataAddress[*iter].type, pos[DataAddress[*iter].type]++, DataAddress[*iter].notNull}));
+			result.DataAddress.insert(std::pair<std::string, DataAddressType>(*iter, {DataAddress[*iter].type, columns++, DataAddress[*iter].notNull}));
 		}
 
 		// 在后面附加上数字函数字段
@@ -215,12 +242,14 @@ namespace OOPD
 			if (function == "COUNT") colType = typeInt;
 			else if (function == "AVG" || function == "STDDEV") colType = typeDouble;
 			result.columnNames.push_back(colName);
-			result.DataAddress.insert(std::pair<std::string, DataAddressType>(colName, {colType, pos[colType]++, false}));
+			//result.DataAddress.insert(std::pair<std::string, DataAddressType>(colName, {colType, pos[colType]++, false}));
+			result.DataAddress.insert(std::pair<std::string, DataAddressType>(colName, {colType, columns++, false}));
 		}
 
 		// 最后是特殊字段 COUNT(*)
 		result.columnNames.push_back("COUNT(*)");
-		result.DataAddress.insert(std::pair<std::string, DataAddressType>("COUNT(*)", {OOPD::typeInt, pos[typeInt]++, false}));
+		//result.DataAddress.insert(std::pair<std::string, DataAddressType>("COUNT(*)", {OOPD::typeInt, pos[typeInt]++, false}));
+		result.DataAddress.insert(std::pair<std::string, DataAddressType>("COUNT(*)", {OOPD::typeInt, columns++, false}));
 
 		if (!result.DataAddress.count(result.primary))
 			result.primary = "";
@@ -229,9 +258,10 @@ namespace OOPD
 		auto aggregate = [&](std::vector<Data>::iterator begin, std::vector<Data>::iterator end, const attrs& fields, const groups& group, std::map<std::string, DataAddressType>& DA) -> Data
 		{
 			Data ans;
-			ans.valInt.resize(pos[typeInt]);
-			ans.valDouble.resize(pos[typeDouble]);
-			ans.valString.resize(pos[typeChar]);
+			//ans.valInt.resize(pos[typeInt]);
+			//ans.valDouble.resize(pos[typeDouble]);
+			//ans.valString.resize(pos[typeChar]);
+			ans.values.resize(columns);
 
 			// 用来分组的列，直接从表中拿数据，内容一定一样
 			for (auto iter = fields.begin(); iter != fields.end(); ++iter)
@@ -239,12 +269,14 @@ namespace OOPD
 				OOPD::DataType type = DA[*iter].type;
 				int id1 = DA[*iter].pos; // 获取在最终返回的临时表中列的序号
 				int id2 = DataAddress[*iter].pos; // 获取在原始数据表中列的序号
-				if (type == typeInt)
+			/*	if (type == typeInt)
 					ans.valInt[id1] = begin->valInt[id2];
 				else if (type == typeDouble)
 					ans.valDouble[id1] = begin->valDouble[id2];
 				else if (type == typeChar)
 					ans.valString[id1] = begin->valString[id2];
+					*/
+				ans.values[id1] = begin->values[id2];
 			}
 
 			// 对于每个数字函数调用，计算其值
@@ -255,9 +287,10 @@ namespace OOPD
 				OOPD::DataType type = DA[name].type; // 要返回的类型
 				int id = DA[name].pos; // 列序号
 
-				double sum = 0.0, sum2 = 0.0, dblE; // sum - 求和，sum2 - 平方和，dblE - double 型极值
-				int count = 0, intE; // count - 计数，intE - int 型极值
-				std::string strE; // strE - string 型极值
+				double sum = 0.0, sum2 = 0.0;//, dblE; // sum - 求和，sum2 - 平方和，dblE - double 型极值
+				int count = 0;//, intE; // count - 计数，intE - int 型极值
+				//std::string strE; // strE - string 型极值
+				const YourSqlData* extremum = nullptr;
 
 				int sId = DataAddress[iter->field].pos; // 被计算的列的编号
 				OOPD::DataType sType = DA[iter->field].type; // 及类型
@@ -265,7 +298,23 @@ namespace OOPD
 				bool flag = false;
 				for (auto jter = begin; jter != end; ++jter)
 				{
-					if (sType == typeInt)
+					const YourSqlData& value = jter->values[sId];
+					if (value.isNull()) continue;
+					if (sType != typeChar)
+					{
+						double numeric = std::stod(value.ptr->get());
+						sum += numeric;
+						sum2 += pow(numeric, 2.0);
+					}
+					if (!flag)
+						extremum = &value, flag = true;
+					else
+					{
+						if (function == "MAX" && value > *extremum) extremum = &value;
+						else if (function == "MIN" && value < *extremum) extremum = &value;
+					}
+
+				/*	if (sType == typeInt)
 					{
 						int vInt = jter->valInt[sId];
 						if (vInt == 0x3f3f3f) // is null
@@ -316,39 +365,43 @@ namespace OOPD
 							if (function == "MAX") strE = std::max(strE, vChar);
 							else strE = std::min(strE, vChar);
 						}
-					}
+					}*/
 					++count;
 				}
-
 				if (function == "MAX" || function == "MIN")
-				{
-					if (type == typeInt) ans.valInt[id] = count ? intE : 0x3f3f3f;
+					/*if (type == typeInt) ans.valInt[id] = count ? intE : 0x3f3f3f;
 					else if (type == typeDouble) ans.valDouble[id] = count ? dblE : 0x3f3f3f;
-					else if (type == typeChar) ans.valString[id] = count ? strE : "NULL";
-				}
+					else if (type == typeChar) ans.valString[id] = count ? strE : "NULL";*/
+					ans.values[id] = *extremum;
 				else if (function == "AVG")
 				{
 					if (type != typeDouble) throw "Aggregate: Type Error";
-					ans.valDouble[id] = (count ? sum / count : 0x3f3f3f);
+					//ans.valDouble[id] = (count ? sum / count : 0x3f3f3f);
+					ans.values[id] = (count ? YourSqlData(new DataDouble(sum / count)) : YourSqlData(new DataDouble()));
 				}
 				else if (function == "SUM")
 				{
-					if (type == typeInt) ans.valInt[id] = count ? sum : 0x3f3f3f;
-					else if (type == typeDouble) ans.valDouble[id] = count ? sum : 0x3f3f3f;
-					else throw "Aggregate: Type Error";
+					//if (type == typeInt) ans.valInt[id] = count ? sum : 0x3f3f3f;
+					//else if (type == typeDouble) ans.valDouble[id] = count ? sum : 0x3f3f3f;
+					//else throw "Aggregate: Type Error";
+					if (type == typeChar) throw "Aggregate: Type Error";
+					ans.values[id] = (count ? YourSqlData(new DataDouble(sum)) : YourSqlData(new DataDouble()));
 				}
 				else if (function == "COUNT")
 				{
 					if (type != typeInt) throw "Aggregate: Type Error";
-					ans.valInt[id] = count;
+					//ans.valInt[id] = count;
+					ans.values[id] = YourSqlData(new DataInt(count));
 				}
 				else if (function == "STDDEV")
 				{
 					if (type != typeDouble) throw "Aggregate: Type Error";
-					ans.valDouble[id] = count ? sqrt(sum2 / count - pow(sum / count, 2.0)) : 0x3f3f3f;
+					//ans.valDouble[id] = count ? sqrt(sum2 / count - pow(sum / count, 2.0)) : 0x3f3f3f;
+					ans.values[id] = count ? YourSqlData(new DataDouble(sqrt(sum2 / count - pow(sum / count, 2.0)))) : YourSqlData(new DataDouble());
 				}
 			}
-			ans.valInt[DA["COUNT(*)"].pos] = end - begin;
+			//ans.valInt[DA["COUNT(*)"].pos] = end - begin;
+			ans.values[DA["COUNT(*)"].pos] = YourSqlData(new DataInt(end - begin));
 			return ans;
 		};
 
@@ -361,11 +414,11 @@ namespace OOPD
 			}
 		}
 
-		delete[] pos;
+//		delete[] pos;
 		return result;
 	}
 
-	BPTree<int>* Table::GetTreeInt(const TableCreateAttr & KeyInfo)
+/*	BPTree<int>* Table::GetTreeInt(const TableCreateAttr & KeyInfo)
 	{
 		auto it = IntTreeList.find(KeyInfo.colName);
 		if (it == IntTreeList.end()) return nullptr;
@@ -385,5 +438,11 @@ namespace OOPD
 		if (it == CharTreeList.end()) return nullptr;
 		else return it->second;
 	}
-	//获取表中某一棵索引树
+*/
+	BPTree<YourSqlData>* Table::GetTree(const TableCreateAttr & KeyInfo)
+	{
+		auto it = TreeList.find(KeyInfo.colName);
+		if (it == TreeList.end()) return nullptr;
+		else return it->second;
+	} //获取表中某一棵索引树
 }

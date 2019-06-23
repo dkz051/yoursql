@@ -6,6 +6,7 @@ echo "YourSQL Automated Challenge - $(date +%c)" >>report.txt
 
 for i in {1..25}
 do
+	rm data/dump.sql -f
 	echo "Case #$i: Running"
 	timeout 10s ./main <$i.sql >$i.ans
 	code=$?

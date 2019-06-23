@@ -255,14 +255,26 @@ namespace OOPD
 			orders orderClause;
 			if (length(clauses[ORDER]) != 0)
 			{
-				for (unsigned i = clauses[ORDER].first + 2; i < clauses[ORDER].second; i += 2)
+				for (unsigned i = clauses[ORDER].first + 2; i < clauses[ORDER].second; )
 				{
 					OOPD::sort_t order = OOPD::sort_t::ascending;
-					if (i + 1 < clauses[ORDER].second && strLower[i + 1] == "desc")
-						order = OOPD::sort_t::descending;
-					orderClause.push_back((order_t){str[i], order});
-					if (i + 1 < clauses[ORDER].second && strLower[i + 1] != ",")
-						++i;
+					std::string field;
+					if (str[i + 1] == "(")
+					{
+						field = str[i] + "(" + str[i + 2] + ")";
+						if (i + 4 < clauses[ORDER].second && strLower[i + 4] == "desc")
+							order = sort_t::descending;
+						i += 5;
+					}
+					else
+					{
+						field = str[i];
+						if (i + 1 < clauses[ORDER].second && strLower[i + 1] == "desc")
+							order = sort_t::descending;
+						i += 2;
+					}
+					if (i < clauses[ORDER].second && str[i] == ",") ++i;
+					orderClause.push_back((order_t){field, order});
 				}
 			}
 			else

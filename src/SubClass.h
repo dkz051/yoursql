@@ -6,6 +6,8 @@
 #include <vector>
 #include <map>
 #include <utility>
+
+#include "data_t.h"
 //-----------------------------------------//
 namespace OOPD
 {
@@ -13,11 +15,16 @@ namespace OOPD
 	enum DataType {typeInt, typeDouble, typeChar};
 
 	//用于保存一行数据，在多个文件中使用
-	struct Data
+	/*struct Data
 	{
 		std::vector<int> valInt;
 		std::vector<double> valDouble;
 		std::vector<std::string> valString;
+	};*/
+
+	struct Data
+	{
+		std::vector<YourSqlData> values;
 	};
 
 	//用于保存一个数据表中各列的含义，在Table类(Table.h)中使用

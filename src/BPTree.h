@@ -146,7 +146,7 @@ namespace OOPD
 				   NowNode->ParentPointer->KeyValue[it - NowNode->ParentPointer->ChildPointer.begin() - 1] = (*(it + 1))->KeyValue[0];
 				break;
 			}
-		while (NowNode->GetType() != OOPD::LEAF && // 我还是克制一下不要说脏话好了，但是在这上浪费我们一下午时间真的好吗
+		while (NowNode->GetType() != OOPD::LEAF && // 此处 D 组原代码有 bug
 			NowNode->KeyValue.size() < Rank / 2) //进行结点的旋转、合并（如果有需要），并更新根指针
 		{
 			if (NowNode == RootPointer)

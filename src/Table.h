@@ -8,6 +8,7 @@
 
 #include "tools.h"
 #include "BPTree.h"
+#include "data_t.h"
 //Table类是底层数据结构中较上层的部分，一个Table类维护多个索引树，以提高检索效率
 //因此Table类重新给出一些进行检索、修改、删除、新建的接口
 //并且Table类额外存储一些辅助数据维护的信息
@@ -29,15 +30,17 @@ namespace OOPD
 
 		std::vector<std::string> columnNames; // 存储列名称的 vector
 
-		std::map<std::string, BPTree<int>*> IntTreeList; //通过列名管理多个索引树
-		std::map<std::string, BPTree<double>*> DoubleTreeList;
-		std::map<std::string, BPTree<std::string>*> CharTreeList;
+//		std::map<std::string, BPTree<int>*> IntTreeList; //通过列名管理多个索引树
+//		std::map<std::string, BPTree<double>*> DoubleTreeList;
+//		std::map<std::string, BPTree<std::string>*> CharTreeList;
+		std::map<std::string, BPTree<YourSqlData>*> TreeList;
 	public:
 		Table(std::vector<TableCreateAttr> & KeyInfo, std::vector<TableCreateAttr> & ColInfo, const int tree_rank, const int type_num);
 		~Table();//需要把所有树释放
-		BPTree<int>* GetTreeInt(const TableCreateAttr & KeyInfo);
-		BPTree<double>* GetTreeDouble(const TableCreateAttr & KeyInfo);
-		BPTree<std::string>* GetTreeChar(const TableCreateAttr & KeyInfo);
+//		BPTree<int>* GetTreeInt(const TableCreateAttr & KeyInfo);
+//		BPTree<double>* GetTreeDouble(const TableCreateAttr & KeyInfo);
+//		BPTree<std::string>* GetTreeChar(const TableCreateAttr & KeyInfo);
+		BPTree<YourSqlData>* GetTree(const TableCreateAttr& KeyInfo);
 		//一些底层控制接口
 	};
 
