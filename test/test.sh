@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm report.txt -f
+rm report.txt data/dump.sql -f
 
 echo "YourSQL Automated Challenge - $(date +%c)" >>report.txt
 

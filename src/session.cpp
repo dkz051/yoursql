@@ -6,6 +6,19 @@
 
 namespace OOPD
 {
+	const std::string dumpFile = "data/dump.sql";
+
+	void Session::dump(const std::string& sql)
+	{
+		std::ofstream file;
+		file.open(dumpFile, std::ios::out | std::ios::app);
+		if (file.is_open())
+		{
+			file << sql << std::endl;
+			file.close();
+		}
+	}
+
 	// 根据名称获取数据库的指针。如果省略数据库名则返回当前活动数据库。如果该数据库不存在则抛出异常
 	DataBase* Session::getDatabase(const std::string& dbName)
 	{
@@ -25,27 +38,26 @@ namespace OOPD
 	void Session::start()
 	{
 		std::string sql;
-/*		std::fstream file;
-		file.open("./data/data.sql", std::ios::in);
+		std::ifstream file;
+		file.open(dumpFile, std::ios::in);
 		if (file.is_open())
 		{
 			while (getline(file, sql, ';'))
 			{
 				sql = trimString(sql);
 				if (sql == "") break;
-				execute(sql, std::cout);
+				execute(sql, std::cout, false);
 			}
 			file.close();
 		}
-		file.open("./data/data.sql", std::ios::out | std::ios::app);
-*/
+
 		while (getline(std::cin, sql, ';'))
 		{
 			sql = trimString(sql);
 			if (sql == "") break;
 			try
 			{
-				execute(sql, std::cout);
+				execute(sql, std::cout, true);
 			}
 			catch (const char e[])
 			{
@@ -59,10 +71,12 @@ namespace OOPD
 		return;
 	}
 
-	void Session::execute(std::string sql, std::ostream& o)
+	void Session::execute(std::string sql, std::ostream& o, bool dumped)
 	{
 		auto str = tokenize(sql), strLower = str; // 调用 tokenize 函数分词
 		std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::stringToLower); // 全部小写
+
+		std::string dumpSql = "";
 
 		if (str.size() < 2) throw "Not a complete statement"; // 不是完整语句
 		else if (strLower[0] == "create")
@@ -75,13 +89,21 @@ namespace OOPD
 				auto traits = tokens(str.begin() + 4, str.end() - 1);
 				createTable(str[2], traits);
 			}
+			dumpSql = sql;
 		}
-		else if (strLower[0] == "drop" && strLower[1] == "database")
-			dropDatabase(str[2]);
-		else if (strLower[0] == "drop" && strLower[1] == "table")
-			dropTable(str[2]);
+		else if (strLower[0] == "drop")
+		{
+			if (strLower[1] == "database")
+				dropDatabase(str[2]);
+			else if (strLower[1] == "table")
+				dropTable(str[2]);
+			dumpSql = sql;
+		}
 		else if (strLower[0] == "use" && strLower[1] != "tables")
+		{
 			use(str[1]);
+			dumpSql = sql;
+		}
 		else if (strLower[0] == "show" && strLower[1] == "databases")
 			opt.DBShow(db, o);
 		else if (strLower[0] == "show" && strLower[1] == "tables")
@@ -96,6 +118,7 @@ namespace OOPD
 				tokens(str.begin() + 4, str.begin() + t - 1),
 				tokens(str.begin() + t + 2, str.end() - 1)
 			);
+			dumpSql = sql;
 		}
 		else if (strLower[0] == "load")
 		{
@@ -119,7 +142,7 @@ namespace OOPD
 					if (iter != values.begin()) attrValue.push_back(",");
 					attrValue.push_back(*iter);
 				}
-				insertRaw(tableName, attrName, attrValue);
+				insertRaw(tableName, attrName, attrValue, dumped);
 			}
 		}
 		else if (strLower[0] == "delete" && strLower[1] == "from")
@@ -129,6 +152,7 @@ namespace OOPD
 				remove(str[2]);
 			else
 				remove(str[2], tokens(str.begin() + t + 1, str.end()));
+			dumpSql = sql;
 		}
 		else if (strLower[0] == "update")
 		{
@@ -138,6 +162,7 @@ namespace OOPD
 				update(str[1], setClause);
 			else
 				update(str[1], setClause, tokens(str.begin() + t + 1, str.end()));
+			dumpSql = sql;
 		}
 		else if (strLower[0] == "select")
 		{
@@ -250,6 +275,13 @@ namespace OOPD
 			if (os != &o) delete os;
 		}
 		else throw "Unknown SQL command";
+
+		if (dumped)
+		{
+			dumpSql = trimString(dumpSql);
+			if (dumpSql != "")
+				dump(dumpSql + ';');
+		}
 	}
 
 	void Session::createDatabase(std::string dbName)
@@ -345,17 +377,26 @@ namespace OOPD
 		return (int)opt.DataInsert(*table, attr);
 	}
 
-	int Session::insertRaw(std::string tableName, const attrs& fields, tokens values)
+	int Session::insertRaw(std::string tableName, const attrs& fields, tokens values, bool dumped)
 	{
 		if (fields.size() != values.size()) throw "Insert data broken";
 
 		Table* table = getTable(tableName);
 
+		std::string valueDump = "";
+
 		auto iter = fields.begin();
 		auto jter = values.begin();
 		for (; iter != fields.end(); ++iter, ++jter)
-			if (table->DataAddress[*iter].type == typeChar)
+		{
+			if (table->DataAddress.count(*iter) && table->DataAddress[*iter].type == typeChar)
 				*jter = toStringLiteral(*jter);
+			valueDump += *jter;
+		}
+
+		std::string sql = "INSERT INTO " + tableName + "(" + concatenate(fields) + ") VALUES(" + valueDump + ");";
+		if (dumped) dump(sql);
+
 		return insert(tableName, fields, values);
 	}
 

@@ -22,6 +22,8 @@ namespace OOPD
 		std::map<std::string, OOPD::DataBase*>& db;
 		Operate opt;
 
+		void dump(const std::string& sql);
+
 		DataBase* getDatabase(const std::string& dbName = "");
 		Table* getTable(const std::string& tableName, const std::string& dbName = "");
 
@@ -31,7 +33,7 @@ namespace OOPD
 		void dropTable(std::string tableName);
 		bool use(std::string dbName);
 		int insert(std::string tableName, const attrs& fields, const tokens& values);
-		int insertRaw(std::string tableName, const attrs& fields, tokens values);
+		int insertRaw(std::string tableName, const attrs& fields, tokens values, bool dumped = true);
 		int remove(const std::string& tableName, const tokens& whereClause = tokens()); // delete
 		int update(const std::string& tableName, const tokens& setClause, const tokens& whereClause = tokens());
 		//子方法，用于构造Where子句的参数结构
@@ -42,7 +44,7 @@ namespace OOPD
 		Session(std::map<std::string, OOPD::DataBase*>& dbList): selected(""), db(dbList) {}
 		~Session() {}
 		void start();
-		void execute(std::string sql, std::ostream& o = std::cout);
+		void execute(std::string sql, std::ostream& o = std::cout, bool dumped = true);
 	};
 }
 //-----------------------------------------//
