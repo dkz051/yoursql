@@ -258,7 +258,7 @@ namespace OOPD
 	{
 		TemporaryTable result = filter(target, where);
 		if (aggregate) result = result.aggregate(groupField, groupBy);
-		result.orderBy(orderBy);
+		if (orderBy.size() > 0) result.orderBy(orderBy);
 		result.print(fields, withTitle, o);
 	}
 

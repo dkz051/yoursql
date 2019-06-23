@@ -27,7 +27,6 @@ namespace OOPD
 		}
 		//Controller类中应该用引用接收这两个参数
 		void Start() {controller.start();}
-		void execute(std::string sql, std::ostream& o = std::cout) { controller.execute(sql, o); }
 	};
 }
 

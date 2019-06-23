@@ -82,7 +82,7 @@ namespace OOPD
 	void TemporaryTable::print(const attrs& fields, bool withTitle, std::ostream& o)
 	{
 		if (rows.size() == 0)
-			return;//则不输出任何信息
+			return; // 没有数据则不输出任何信息
 		if (withTitle)
 		{
 			for (auto it = fields.begin(); it != fields.end(); ++it) //输出列名
@@ -221,6 +221,9 @@ namespace OOPD
 		// 最后是特殊字段 COUNT(*)
 		result.columnNames.push_back("COUNT(*)");
 		result.DataAddress.insert(std::pair<std::string, DataAddressType>("COUNT(*)", {OOPD::typeInt, pos[typeInt]++, false}));
+
+		if (!result.DataAddress.count(result.primary))
+			result.primary = "";
 
 		// 对数据分组并计算数字函数
 		auto aggregate = [&](std::vector<Data>::iterator begin, std::vector<Data>::iterator end, const attrs& fields, const groups& group, std::map<std::string, DataAddressType>& DA) -> Data

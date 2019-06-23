@@ -1,20 +1,31 @@
 CC = g++
-CPPFLAGS = -std=c++14 -g
+CPPFLAGS = -std=c++14 -O2
 LINKFLAGS = -lpthread
-SOURCES = $(wildcard *.cpp)
+ALLSOURCES = $(wildcard *.cpp)
+ALLOBJECTS = $(ALLSOURCES:%.cpp=%.o)
 HEADERS = $(wildcard *.h)
-OBJECTS = $(SOURCES:%.cpp=%.o)
-TARGET = main
+MAKEFILE = makefile
+
+SOURCES = $(filter-out main-1.cpp, $(ALLSOURCES))
+OBJECTS = $(filter-out main-1.o, $(ALLOBJECTS))
+TARGET = main2
+
+OLDSOURCES = $(filter-out main.cpp, $(ALLSOURCES))
+OLDOBJECTS = $(filter-out main.o, $(ALLOBJECTS))
+OLDTARGET = main1
 
 .PHONY: all
-all: $(TARGET)
+all: $(TARGET) $(OLDTARGET)
 
 $(TARGET): $(OBJECTS) $(HEADERS)
 	$(CC) $(OBJECTS) $(LINKFLAGS) -o $(TARGET)
 
-%.o: %.cpp $(HEADERS)
+$(OLDTARGET): $(OLDOBJECTS) $(HEADERS)
+	$(CC) $(OLDOBJECTS) $(LINKFLAGS) -o $(OLDTARGET)
+
+%.o: %.cpp $(HEADERS) $(MAKEFILE)
 	$(CC) $(CPPFLAGS) $< -o $@ -c
 
 .PHONY: clean
 clean:
-	rm -f *.o main
+	rm -f *.o main1 main2
